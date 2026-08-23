@@ -40,12 +40,16 @@ class DashboardViewModel(
         )
 
     fun refreshAll() {
+        if (!_isRefreshing.compareAndSet(expect = false, update = true)) return
+
         viewModelScope.launch {
-            _isRefreshing.value = true
-            val result = refreshAllAccountsUseCase()
-            _isRefreshing.value = false
-            if (result.isFailure) {
-                _errorMessage.value = result.exceptionOrNull()?.message ?: "Failed to refresh quotas"
+            try {
+                val result = refreshAllAccountsUseCase()
+                if (result.isFailure) {
+                    _errorMessage.value = result.exceptionOrNull()?.message ?: "Failed to refresh quotas"
+                }
+            } finally {
+                _isRefreshing.value = false
             }
         }
     }

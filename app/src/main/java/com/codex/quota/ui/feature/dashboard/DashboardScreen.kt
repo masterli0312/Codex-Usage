@@ -34,6 +34,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -141,27 +142,33 @@ fun DashboardScreen(
                     .padding(padding)
             )
         } else {
-            LazyColumn(
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = { viewModel.refreshAll() },
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                    .padding(padding)
             ) {
-                item {
-                    OverviewSummaryCard(accounts = accounts)
-                }
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    item {
+                        OverviewSummaryCard(accounts = accounts)
+                    }
 
-                items(accounts, key = { it.account.id }) { item ->
-                    AccountCard(
-                        item = item,
-                        onClick = { onNavigateToAccountDetail(item.account.id) },
-                        onSignInClick = { onNavigateToAccountDetail(item.account.id) }
-                    )
-                }
+                    items(accounts, key = { it.account.id }) { item ->
+                        AccountCard(
+                            item = item,
+                            onClick = { onNavigateToAccountDetail(item.account.id) },
+                            onSignInClick = { onNavigateToAccountDetail(item.account.id) }
+                        )
+                    }
 
-                item {
-                    Spacer(modifier = Modifier.height(72.dp))
+                    item {
+                        Spacer(modifier = Modifier.height(72.dp))
+                    }
                 }
             }
         }
