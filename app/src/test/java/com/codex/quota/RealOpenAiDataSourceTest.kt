@@ -6,10 +6,12 @@ import com.codex.quota.data.remote.ApiResponse
 import com.codex.quota.data.remote.OpenAiUsageService
 import com.codex.quota.data.remote.RealOpenAiDataSource
 import com.codex.quota.data.remote.dto.ChatGptAccountCheckData
+import com.codex.quota.data.remote.dto.ChatGptRateLimitDto
 import com.codex.quota.data.remote.dto.ChatGptRateLimitResetCreditsDto
 import com.codex.quota.data.remote.dto.ChatGptResetCreditDto
 import com.codex.quota.data.remote.dto.ChatGptResetCreditsDto
 import com.codex.quota.data.remote.dto.ChatGptWhamUsageDto
+import com.codex.quota.data.remote.dto.ChatGptWindowDto
 import com.codex.quota.data.remote.dto.OpenAiModelsResponseDto
 import com.codex.quota.data.remote.dto.ParsedRateLimits
 import com.codex.quota.domain.model.AuthStatus
@@ -168,6 +170,72 @@ class RealOpenAiDataSourceTest {
     }
 
     @Test
+    fun subscriberUsage_classifiesDualWindowsIndependentOfOrder() = runTest {
+        val usage = fetchSubscriberUsage(
+            primaryWindow = quotaWindow(usedPercent = 12.0, limitWindowSeconds = 604_800L, resetAtSeconds = 2_000_000L),
+            secondaryWindow = quotaWindow(usedPercent = 75.0, limitWindowSeconds = 18_000L, resetAtSeconds = 1_000_000L)
+        )
+
+        assertEquals(88.0, usage.remainingPercent!!, 0.01)
+        assertEquals(12.0, usage.usedPercent!!, 0.01)
+        assertEquals(75.0, usage.fiveHourUsedPercent!!, 0.01)
+        assertEquals(25.0, usage.fiveHourRemainingPercent!!, 0.01)
+        assertEquals(2_000_000L * 1000L, usage.resetAtEpochMs)
+        assertEquals(1_000_000L * 1000L, usage.fiveHourResetAtEpochMs)
+    }
+
+    @Test
+    fun subscriberUsage_defaultsUnknownDualWindowOrderToPrimaryFiveHourSecondaryWeekly() = runTest {
+        val usage = fetchSubscriberUsage(
+            primaryWindow = quotaWindow(usedPercent = 61.0, limitWindowSeconds = null, resetAtSeconds = 1_000_000L),
+            secondaryWindow = quotaWindow(usedPercent = 14.0, limitWindowSeconds = null, resetAtSeconds = 2_000_000L)
+        )
+
+        assertEquals(39.0, usage.fiveHourRemainingPercent!!, 0.01)
+        assertEquals(86.0, usage.remainingPercent!!, 0.01)
+        assertEquals(1_000_000L * 1000L, usage.fiveHourResetAtEpochMs)
+        assertEquals(2_000_000L * 1000L, usage.resetAtEpochMs)
+    }
+
+    @Test
+    fun subscriberUsage_treatsSingleDurationlessWindowAsWeeklyLegacy() = runTest {
+        val usage = fetchSubscriberUsage(
+            primaryWindow = quotaWindow(usedPercent = 41.0, limitWindowSeconds = null, resetAtSeconds = 3_000_000L),
+            secondaryWindow = null
+        )
+
+        assertEquals(59.0, usage.remainingPercent!!, 0.01)
+        assertEquals(null, usage.fiveHourRemainingPercent)
+        assertEquals(3_000_000L * 1000L, usage.resetAtEpochMs)
+    }
+
+    @Test
+    fun subscriberUsage_leavesWeeklyNullWhenOnlyFiveHourWindowIsClassifiable() = runTest {
+        val usage = fetchSubscriberUsage(
+            primaryWindow = quotaWindow(usedPercent = 91.0, limitWindowSeconds = 18_000L, resetAtSeconds = 4_000_000L),
+            secondaryWindow = null
+        )
+
+        assertEquals(null, usage.remainingPercent)
+        assertEquals(9.0, usage.fiveHourRemainingPercent!!, 0.01)
+        assertEquals(null, usage.resetAtEpochMs)
+        assertEquals(4_000_000L * 1000L, usage.fiveHourResetAtEpochMs)
+    }
+
+    @Test
+    fun subscriberUsage_limitReachedChecksBothWindows() = runTest {
+        val usage = fetchSubscriberUsage(
+            primaryWindow = quotaWindow(usedPercent = 10.0, limitWindowSeconds = 604_800L, resetAtSeconds = 5_000_000L),
+            secondaryWindow = quotaWindow(usedPercent = 100.0, limitWindowSeconds = 18_000L, resetAtSeconds = 5_100_000L),
+            limitReached = false
+        )
+
+        assertEquals(90.0, usage.remainingPercent!!, 0.01)
+        assertEquals(0.0, usage.fiveHourRemainingPercent!!, 0.01)
+        assertTrue(usage.errorMessage!!.contains("Usage limit reached"))
+    }
+
+    @Test
     fun whamDto_decodesBankedResetsAndIgnoresUnknownFields() {
         val dto = ignoreUnknownKeysJson.decodeFromString<ChatGptWhamUsageDto>(
             """{"rate_limit_reset_credits":{"available_count":1,"future_field":true},"unknown_root":"value"}"""
@@ -190,6 +258,58 @@ class RealOpenAiDataSourceTest {
         assertEquals("Banked reset", dto.credits.single().title)
     }
 
+    private suspend fun fetchSubscriberUsage(
+        primaryWindow: ChatGptWindowDto?,
+        secondaryWindow: ChatGptWindowDto?,
+        limitReached: Boolean = false
+    ) = withSubscriberToken {
+        val api = GatedSubscriberApi(
+            apiRenewal = 8_000_000_000_000L,
+            whamUsage = ChatGptWhamUsageDto(
+                rateLimit = ChatGptRateLimitDto(
+                    limitReached = limitReached,
+                    primaryWindow = primaryWindow,
+                    secondaryWindow = secondaryWindow
+                )
+            )
+        )
+        api.releaseResponses.complete(Unit)
+        val result = RealOpenAiDataSource(api).fetchUsage(account(), "subscriber.jwt.token")
+        assertTrue(result.isSuccess)
+        result.getOrThrow()
+    }
+
+    private fun quotaWindow(
+        usedPercent: Double,
+        limitWindowSeconds: Long?,
+        resetAtSeconds: Long
+    ) = ChatGptWindowDto(
+        usedPercent = usedPercent,
+        limitWindowSeconds = limitWindowSeconds,
+        resetAfterSeconds = 600L,
+        resetAt = resetAtSeconds
+    )
+
+    private suspend fun <T> withSubscriberToken(block: suspend () -> T): T {
+        mockkObject(JwtTokenParser)
+        every { JwtTokenParser.parseToken(any()) } returns DecodedTokenInfo(
+            email = "person@example.com",
+            userId = "user-1",
+            organizationId = null,
+            chatgptAccountId = "chatgpt-account-1",
+            planType = PlanType.PLUS,
+            expiresAtEpochMs = Long.MAX_VALUE,
+            subscriptionExpiresAtEpochMs = 9_000_000_000_000L,
+            subscriptionStartedAtEpochMs = 1_000L
+        )
+
+        return try {
+            block()
+        } finally {
+            unmockkObject(JwtTokenParser)
+        }
+    }
+
     private fun account() = CodexAccount(
         id = "account-1",
         nickname = "Subscriber",
@@ -208,7 +328,8 @@ class RealOpenAiDataSourceTest {
         private val apiRenewal: Long,
         private val bankedResets: Int? = null,
         private val resetCredits: List<ChatGptResetCreditDto> = emptyList(),
-        private val throwResetCreditsFailure: Boolean = false
+        private val throwResetCreditsFailure: Boolean = false,
+        private val whamUsage: ChatGptWhamUsageDto? = null
     ) : OpenAiUsageService {
         val whamStarted = CompletableDeferred<Unit>()
         val accountCheckStarted = CompletableDeferred<Unit>()
@@ -221,7 +342,13 @@ class RealOpenAiDataSourceTest {
         ): ApiResponse<ChatGptWhamUsageDto> {
             whamStarted.complete(Unit)
             releaseResponses.await()
-            return if (bankedResets != null) {
+            return whamUsage?.let {
+                ApiResponse.Success(
+                    data = it,
+                    rateLimits = emptyRateLimits(),
+                    httpCode = 200
+                )
+            } ?: if (bankedResets != null) {
                 ApiResponse.Success(
                     data = ChatGptWhamUsageDto(
                         rateLimitResetCredits = ChatGptRateLimitResetCreditsDto(

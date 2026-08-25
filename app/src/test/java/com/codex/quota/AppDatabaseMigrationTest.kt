@@ -20,4 +20,27 @@ class AppDatabaseMigrationTest {
             )
         }
     }
+
+    @Test
+    fun migration5To6_addsNullableFiveHourQuotaColumns() {
+        val database = mockk<SupportSQLiteDatabase>(relaxed = true)
+
+        AppDatabase.MIGRATION_5_6.migrate(database)
+
+        verify(exactly = 1) {
+            database.execSQL(
+                "ALTER TABLE usage_snapshots ADD COLUMN fiveHourRemainingPercent REAL"
+            )
+        }
+        verify(exactly = 1) {
+            database.execSQL(
+                "ALTER TABLE usage_snapshots ADD COLUMN fiveHourUsedPercent REAL"
+            )
+        }
+        verify(exactly = 1) {
+            database.execSQL(
+                "ALTER TABLE usage_snapshots ADD COLUMN fiveHourResetAtEpochMs INTEGER"
+            )
+        }
+    }
 }

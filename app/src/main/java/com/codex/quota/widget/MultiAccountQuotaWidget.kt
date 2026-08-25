@@ -38,6 +38,8 @@ import com.codex.quota.domain.model.AccountWithUsage
 import com.codex.quota.domain.model.AuthStatus
 import com.codex.quota.domain.model.WidgetThemeMode
 import com.codex.quota.ui.MainActivity
+import com.codex.quota.ui.util.formatQuotaPercent
+import com.codex.quota.ui.util.primarySubscriberQuotaWindow
 
 class MultiAccountQuotaWidget : GlanceAppWidget() {
 
@@ -135,9 +137,19 @@ class MultiAccountQuotaWidget : GlanceAppWidget() {
             MainActivity::class.java
         )
 
-        val remainingPercent = item.usage?.remainingPercent?.toInt()
+        val primaryWindow = item.usage.primarySubscriberQuotaWindow()
+        val remainingPercent = primaryWindow?.remainingPercent?.toInt() ?: item.usage?.remainingPercent?.toInt()
         val isSignedOut = item.usage?.status == AuthStatus.AUTHENTICATION_REQUIRED ||
                 item.account.authStatus == AuthStatus.AUTHENTICATION_REQUIRED
+        val quotaText = if (item.usage?.fiveHourRemainingPercent != null && primaryWindow?.label == "Weekly") {
+            "W ${formatQuotaPercent(primaryWindow.remainingPercent)} • 5h ${formatQuotaPercent(item.usage.fiveHourRemainingPercent)}"
+        } else if (primaryWindow != null) {
+            "${primaryWindow.label} ${formatQuotaPercent(primaryWindow.remainingPercent)}"
+        } else if (remainingPercent != null) {
+            "$remainingPercent%"
+        } else {
+            "--%"
+        }
 
         val dotColor = try {
             Color(android.graphics.Color.parseColor(item.account.colorHex))
@@ -178,10 +190,10 @@ class MultiAccountQuotaWidget : GlanceAppWidget() {
                 )
             } else {
                 Text(
-                    text = if (remainingPercent != null) "$remainingPercent%" else "--%",
+                    text = quotaText,
                     style = TextStyle(
                         color = if ((remainingPercent ?: 100) > 20) colors.accent else ColorProvider(Color(0xFFF59E0B)),
-                        fontSize = 12.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
                     )
                 )

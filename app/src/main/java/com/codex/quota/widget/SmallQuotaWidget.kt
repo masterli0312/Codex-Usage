@@ -38,6 +38,9 @@ import com.codex.quota.domain.model.AccountWithUsage
 import com.codex.quota.domain.model.AuthStatus
 import com.codex.quota.domain.model.WidgetThemeMode
 import com.codex.quota.ui.MainActivity
+import com.codex.quota.ui.util.formatQuotaPercent
+import com.codex.quota.ui.util.formatResetCountdown
+import com.codex.quota.ui.util.primarySubscriberQuotaWindow
 
 class SmallQuotaWidget : GlanceAppWidget() {
 
@@ -102,11 +105,15 @@ class SmallQuotaWidget : GlanceAppWidget() {
                     )
                 }
             } else {
-                val remainingPercent = data.usage?.remainingPercent?.toInt()
+                val primaryWindow = data.usage.primarySubscriberQuotaWindow()
+                val remainingPercent = primaryWindow?.remainingPercent?.toInt() ?: data.usage?.remainingPercent?.toInt()
                 val status = data.usage?.status ?: data.account.authStatus
-                val resetStr = data.usage?.rateLimitInfo?.resetRequestsDuration
+                val resetStr = primaryWindow?.resetAtEpochMs?.let { formatResetCountdown(it) }
+                    ?: data.usage?.rateLimitInfo?.resetRequestsDuration
                     ?: data.usage?.rateLimitInfo?.resetTokensDuration
                     ?: "Active"
+                val subtitle = if (primaryWindow?.label == "Weekly") "weekly left" else "quota left"
+                val fiveHourLine = data.usage?.fiveHourRemainingPercent?.let { "5h ${formatQuotaPercent(it)}" }
 
                 val dotColor = try {
                     Color(android.graphics.Color.parseColor(data.account.colorHex))
@@ -155,7 +162,7 @@ class SmallQuotaWidget : GlanceAppWidget() {
                             )
                         )
                         Text(
-                            text = "quota left",
+                            text = subtitle,
                             style = TextStyle(color = colors.textSecondary, fontSize = 10.sp)
                         )
                     }
@@ -163,7 +170,7 @@ class SmallQuotaWidget : GlanceAppWidget() {
                     if (height > 90.dp) {
                         Spacer(modifier = GlanceModifier.height(4.dp))
                         Text(
-                            text = "Reset: $resetStr",
+                            text = fiveHourLine?.let { "$it • W reset: $resetStr" } ?: "Reset: $resetStr",
                             maxLines = 1,
                             style = TextStyle(color = colors.textMuted, fontSize = 9.sp)
                         )

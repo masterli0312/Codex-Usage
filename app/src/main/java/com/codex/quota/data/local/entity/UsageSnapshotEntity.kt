@@ -45,7 +45,10 @@ data class UsageSnapshotEntity(
     val billingPeriod: String?,
     val accountCreatedEpochMs: Long?,
     val willAutoRenew: Boolean?,
-    val hasActiveSubscription: Boolean?
+    val hasActiveSubscription: Boolean?,
+    val fiveHourRemainingPercent: Double?,
+    val fiveHourUsedPercent: Double?,
+    val fiveHourResetAtEpochMs: Long?
 ) {
     fun toDomain(): CodexUsage {
         val rateLimitInfo = if (limitRequests != null || limitTokens != null) {
@@ -84,7 +87,10 @@ data class UsageSnapshotEntity(
             billingPeriod = billingPeriod,
             accountCreatedEpochMs = accountCreatedEpochMs,
             willAutoRenew = willAutoRenew,
-            hasActiveSubscription = hasActiveSubscription
+            hasActiveSubscription = hasActiveSubscription,
+            fiveHourRemainingPercent = fiveHourRemainingPercent,
+            fiveHourUsedPercent = fiveHourUsedPercent,
+            fiveHourResetAtEpochMs = fiveHourResetAtEpochMs
         )
     }
 
@@ -114,7 +120,10 @@ data class UsageSnapshotEntity(
                 billingPeriod = usage.billingPeriod,
                 accountCreatedEpochMs = usage.accountCreatedEpochMs,
                 willAutoRenew = usage.willAutoRenew,
-                hasActiveSubscription = usage.hasActiveSubscription
+                hasActiveSubscription = usage.hasActiveSubscription,
+                fiveHourRemainingPercent = usage.fiveHourRemainingPercent,
+                fiveHourUsedPercent = usage.fiveHourUsedPercent,
+                fiveHourResetAtEpochMs = usage.fiveHourResetAtEpochMs
             )
         }
     }

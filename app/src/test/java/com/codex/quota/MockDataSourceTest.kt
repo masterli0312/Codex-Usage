@@ -43,8 +43,10 @@ class MockDataSourceTest {
         assertTrue(result.isSuccess)
         val usage = result.getOrThrow()
         assertEquals(78.0, usage.remainingPercent!!, 0.1)
+        assertEquals(43.0, usage.fiveHourRemainingPercent!!, 0.1)
         assertEquals(AuthStatus.AUTHENTICATED, usage.status)
         assertNotNull(usage.resetAtEpochMs)
+        assertNotNull(usage.fiveHourResetAtEpochMs)
     }
 
     @Test
@@ -55,6 +57,7 @@ class MockDataSourceTest {
         assertTrue(result.isSuccess)
         val usage = result.getOrThrow()
         assertEquals(31.0, usage.remainingPercent!!, 0.1)
+        assertEquals(64.0, usage.fiveHourRemainingPercent!!, 0.1)
         assertEquals(AuthStatus.AUTHENTICATED, usage.status)
     }
 

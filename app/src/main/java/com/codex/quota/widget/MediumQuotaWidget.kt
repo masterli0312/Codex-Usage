@@ -38,6 +38,9 @@ import com.codex.quota.domain.model.AccountWithUsage
 import com.codex.quota.domain.model.AuthStatus
 import com.codex.quota.domain.model.WidgetThemeMode
 import com.codex.quota.ui.MainActivity
+import com.codex.quota.ui.util.formatQuotaPercent
+import com.codex.quota.ui.util.formatResetCountdown
+import com.codex.quota.ui.util.primarySubscriberQuotaWindow
 import kotlinx.coroutines.runBlocking
 
 class MediumQuotaWidget : GlanceAppWidget() {
@@ -103,12 +106,22 @@ class MediumQuotaWidget : GlanceAppWidget() {
                     )
                 }
             } else {
-                val remainingPercent = data.usage?.remainingPercent?.toInt()
-                val usedPercent = data.usage?.usedPercent?.toInt() ?: remainingPercent?.let { (100 - it).coerceIn(0, 100) }
+                val primaryWindow = data.usage.primarySubscriberQuotaWindow()
+                val remainingPercent = primaryWindow?.remainingPercent?.toInt() ?: data.usage?.remainingPercent?.toInt()
+                val usedPercent = primaryWindow?.usedPercent?.toInt()
+                    ?: data.usage?.usedPercent?.toInt()
+                    ?: remainingPercent?.let { (100 - it).coerceIn(0, 100) }
                 val status = data.usage?.status ?: data.account.authStatus
-                val resetStr = data.usage?.rateLimitInfo?.resetRequestsDuration
+                val resetStr = primaryWindow?.resetAtEpochMs?.let { formatResetCountdown(it) }
+                    ?: data.usage?.rateLimitInfo?.resetRequestsDuration
                     ?: data.usage?.rateLimitInfo?.resetTokensDuration
                     ?: "Active"
+                val primaryLabel = primaryWindow?.label ?: "Quota"
+                val secondaryQuotaText = if (data.usage?.fiveHourRemainingPercent != null && primaryWindow?.label == "Weekly") {
+                    "5h ${formatQuotaPercent(data.usage.fiveHourRemainingPercent)}"
+                } else {
+                    null
+                }
 
                 val dotColor = try {
                     Color(android.graphics.Color.parseColor(data.account.colorHex))
@@ -195,7 +208,7 @@ class MediumQuotaWidget : GlanceAppWidget() {
                                     style = TextStyle(color = colors.textPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                 )
                                 Text(
-                                    text = data.account.planType.displayName,
+                                    text = secondaryQuotaText ?: data.account.planType.displayName,
                                     maxLines = 1,
                                     style = TextStyle(color = colors.textSecondary, fontSize = 11.sp)
                                 )
@@ -251,7 +264,7 @@ class MediumQuotaWidget : GlanceAppWidget() {
                         ) {
                             Column(modifier = GlanceModifier.defaultWeight()) {
                                 Text(
-                                    text = "USED",
+                                    text = if (primaryWindow != null) "${primaryLabel.uppercase()} USED" else "USED",
                                     style = TextStyle(color = colors.textMuted, fontSize = 8.sp, fontWeight = FontWeight.Bold)
                                 )
                                 Text(
@@ -262,7 +275,7 @@ class MediumQuotaWidget : GlanceAppWidget() {
 
                             Column(modifier = GlanceModifier.defaultWeight()) {
                                 Text(
-                                    text = "RESET IN",
+                                    text = if (primaryWindow != null) "${primaryLabel.uppercase()} RESET" else "RESET IN",
                                     style = TextStyle(color = colors.textMuted, fontSize = 8.sp, fontWeight = FontWeight.Bold)
                                 )
                                 Text(

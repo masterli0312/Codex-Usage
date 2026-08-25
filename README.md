@@ -23,7 +23,7 @@
 ## ✨ Features
 
 ### 🔄 Real-Time Quota & Rolling Limits
-- **Live Subscriber Rate Limits**: Directly queries OpenAI's real-time rate limit engines to display accurate `Used %` and `Remaining %` on active ChatGPT Plus, Team, and Enterprise accounts.
+- **Live Subscriber Rate Limits**: Directly queries OpenAI's real-time rate limit engines to display accurate weekly and 5-hour `Used %` / `Remaining %` windows on active ChatGPT Plus, Team, and Enterprise accounts when available.
 - **Banked Resets**: Subscriber accounts show available banked usage-limit resets when the WHAM response provides them.
 - **Dynamic Reset Countdown**: Real-time timers showing the exact duration until rate limit windows roll over.
 - **Platform API Keys**: Tracks token-per-minute (TPM) and request-per-minute (RPM) limits with detailed metric meters.

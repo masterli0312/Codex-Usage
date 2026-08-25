@@ -54,24 +54,14 @@ class MockOpenAiDataSource : CodexAccountDataSource {
             }
 
             account.planType == PlanType.TEAM -> {
-                CodexUsage(
+                subscriberUsage(
                     accountId = account.id,
-                    remainingPercent = 31.0,
-                    usedPercent = 69.0,
-                    usedTokens = 345_000L,
-                    totalLimitTokens = 500_000L,
-                    remainingCredits = 45.50,
-                    resetAtEpochMs = now + (16 * 60 * 60 * 1000L), // 16 hours
-                    status = AuthStatus.AUTHENTICATED,
-                    fetchedAtEpochMs = now,
-                    rateLimitInfo = RateLimitInfo(
-                        limitRequests = 5000,
-                        remainingRequests = 1550,
-                        resetRequestsDuration = "16h",
-                        limitTokens = 500_000,
-                        remainingTokens = 155_000,
-                        resetTokensDuration = "16h"
-                    )
+                    now = now,
+                    weeklyRemainingPercent = 31.0,
+                    fiveHourRemainingPercent = 64.0,
+                    weeklyResetDelayMs = 3L * 24L * 60L * 60L * 1000L,
+                    fiveHourResetDelayMs = 95L * 60L * 1000L,
+                    remainingCredits = 45.50
                 )
             }
 
@@ -98,29 +88,65 @@ class MockOpenAiDataSource : CodexAccountDataSource {
             }
 
             else -> {
-                // Default: Personal Plus profile (78% remaining)
-                CodexUsage(
+                subscriberUsage(
                     accountId = account.id,
-                    remainingPercent = 78.0,
-                    usedPercent = 22.0,
-                    usedTokens = 22_000L,
-                    totalLimitTokens = 100_000L,
-                    remainingCredits = null,
-                    resetAtEpochMs = now + (2 * 3600 * 1000L + 15 * 60 * 1000L), // 2h 15m
-                    status = AuthStatus.AUTHENTICATED,
-                    fetchedAtEpochMs = now,
-                    rateLimitInfo = RateLimitInfo(
-                        limitRequests = 500,
-                        remainingRequests = 390,
-                        resetRequestsDuration = "2h 15m",
-                        limitTokens = 100_000,
-                        remainingTokens = 78_000,
-                        resetTokensDuration = "2h 15m"
-                    )
+                    now = now,
+                    weeklyRemainingPercent = 78.0,
+                    fiveHourRemainingPercent = 43.0,
+                    weeklyResetDelayMs = 5L * 24L * 60L * 60L * 1000L + 6L * 60L * 60L * 1000L,
+                    fiveHourResetDelayMs = 2L * 60L * 60L * 1000L + 15L * 60L * 1000L,
+                    remainingCredits = null
                 )
             }
         }
 
         return Result.success(usage)
+    }
+
+    private fun subscriberUsage(
+        accountId: String,
+        now: Long,
+        weeklyRemainingPercent: Double,
+        fiveHourRemainingPercent: Double,
+        weeklyResetDelayMs: Long,
+        fiveHourResetDelayMs: Long,
+        remainingCredits: Double?
+    ): CodexUsage {
+        return CodexUsage(
+            accountId = accountId,
+            remainingPercent = weeklyRemainingPercent,
+            usedPercent = 100.0 - weeklyRemainingPercent,
+            usedTokens = null,
+            totalLimitTokens = null,
+            remainingCredits = remainingCredits,
+            resetAtEpochMs = now + weeklyResetDelayMs,
+            status = AuthStatus.AUTHENTICATED,
+            fetchedAtEpochMs = now,
+            rateLimitInfo = RateLimitInfo(
+                limitRequests = null,
+                remainingRequests = null,
+                resetRequestsDuration = formatResetDuration(weeklyResetDelayMs),
+                limitTokens = null,
+                remainingTokens = null,
+                resetTokensDuration = null
+            ),
+            fiveHourRemainingPercent = fiveHourRemainingPercent,
+            fiveHourUsedPercent = 100.0 - fiveHourRemainingPercent,
+            fiveHourResetAtEpochMs = now + fiveHourResetDelayMs
+        )
+    }
+
+    private fun formatResetDuration(delayMs: Long): String {
+        val totalMinutes = delayMs / 60_000L
+        val days = totalMinutes / (24L * 60L)
+        val hours = (totalMinutes % (24L * 60L)) / 60L
+        val minutes = totalMinutes % 60L
+        return when {
+            days > 0L && hours > 0L -> "${days}d ${hours}h"
+            days > 0L -> "${days}d"
+            hours > 0L && minutes > 0L -> "${hours}h ${minutes}m"
+            hours > 0L -> "${hours}h"
+            else -> "${minutes}m"
+        }
     }
 }

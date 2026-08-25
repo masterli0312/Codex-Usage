@@ -69,6 +69,12 @@ import com.codex.quota.domain.model.AuthStatus
 import com.codex.quota.ui.components.CircularQuotaGauge
 import com.codex.quota.ui.components.RelativeTimeText
 import com.codex.quota.ui.components.StatusBadge
+import com.codex.quota.ui.util.formatQuotaPercent
+import com.codex.quota.ui.util.formatQuotaSummary
+import com.codex.quota.ui.util.formatResetCountdown
+import com.codex.quota.ui.util.isApiKeyQuotaUsage
+import com.codex.quota.ui.util.primarySubscriberQuotaWindow
+import com.codex.quota.ui.util.subscriberQuotaWindows
 import com.codex.quota.ui.theme.Amber500
 import com.codex.quota.ui.theme.Red500
 import kotlinx.coroutines.launch
@@ -181,8 +187,12 @@ fun AccountDetailScreen(
             val account = data.account
             val usage = data.usage
             val status = usage?.status ?: account.authStatus
-            val remainingPercent = usage?.remainingPercent
-            val usedPercent = usage?.usedPercent ?: (remainingPercent?.let { (100.0 - it).coerceIn(0.0, 100.0) })
+            val subscriberWindows = usage.subscriberQuotaWindows()
+            val primarySubscriberWindow = usage.primarySubscriberQuotaWindow()
+            val remainingPercent = primarySubscriberWindow?.remainingPercent ?: usage?.remainingPercent
+            val usedPercent = primarySubscriberWindow?.usedPercent
+                ?: usage?.usedPercent
+                ?: (remainingPercent?.let { (100.0 - it).coerceIn(0.0, 100.0) })
             val effectiveRenewalEpochMs = account.customRenewalDateEpochMs ?: usage?.subscriptionRenewalEpochMs
 
             LazyColumn(
@@ -301,9 +311,13 @@ fun AccountDetailScreen(
                             Spacer(modifier = Modifier.height(20.dp))
 
                             // 3-Metric Summary Box
-                            val resetStr = usage?.rateLimitInfo?.resetRequestsDuration
-                                ?: usage?.rateLimitInfo?.resetTokensDuration
-                                ?: "Active"
+                            val resetStr = if (usage.isApiKeyQuotaUsage()) {
+                                usage?.rateLimitInfo?.resetRequestsDuration
+                                    ?: usage?.rateLimitInfo?.resetTokensDuration
+                                    ?: "Active"
+                            } else {
+                                formatResetCountdown(primarySubscriberWindow?.resetAtEpochMs)
+                            }
 
                             Row(
                                 modifier = Modifier
@@ -316,7 +330,7 @@ fun AccountDetailScreen(
                             ) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Text(
-                                        text = "REMAINING",
+                                        text = if (subscriberWindows.isNotEmpty()) "WEEKLY" else "REMAINING",
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontWeight = FontWeight.Bold
@@ -338,7 +352,7 @@ fun AccountDetailScreen(
 
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Text(
-                                        text = "USED",
+                                        text = if (subscriberWindows.isNotEmpty()) "WEEKLY USED" else "USED",
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontWeight = FontWeight.Bold
@@ -360,7 +374,7 @@ fun AccountDetailScreen(
 
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Text(
-                                        text = "RESET IN",
+                                        text = if (subscriberWindows.isNotEmpty()) "WEEKLY RESET" else "RESET IN",
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontWeight = FontWeight.Bold
@@ -370,6 +384,20 @@ fun AccountDetailScreen(
                                         text = resetStr,
                                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.secondary
+                                    )
+                                }
+                            }
+
+                            if (subscriberWindows.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(12.dp))
+                                subscriberWindows.forEach { window ->
+                                    DetailMetricRow(
+                                        label = "${window.label} quota",
+                                        value = formatQuotaSummary(window)
+                                    )
+                                    DetailMetricRow(
+                                        label = "${window.label} reset",
+                                        value = formatResetCountdown(window.resetAtEpochMs)
                                     )
                                 }
                             }

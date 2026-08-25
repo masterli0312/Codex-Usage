@@ -1,6 +1,7 @@
 package com.codex.quota.data.remote
 
 import com.codex.quota.auth.JwtTokenParser
+import com.codex.quota.data.remote.dto.ChatGptWindowDto
 import com.codex.quota.domain.model.AuthStatus
 import com.codex.quota.domain.model.CodexAccount
 import com.codex.quota.domain.model.CodexUsage
@@ -82,33 +83,41 @@ class RealOpenAiDataSource(
                 is ApiResponse.Success -> {
                     val whamDto = whamResponse.data
                     val rateLimit = whamDto.rateLimit
-                    val primaryWindow = rateLimit?.primaryWindow
-                    val secondaryWindow = rateLimit?.secondaryWindow
+                    val classifiedWindows = classifySubscriberWindows(
+                        primaryWindow = rateLimit?.primaryWindow,
+                        secondaryWindow = rateLimit?.secondaryWindow
+                    )
+                    val weeklyWindow = classifiedWindows.weekly
+                    val fiveHourWindow = classifiedWindows.fiveHour
 
-                    val usedPercent = primaryWindow?.usedPercent ?: secondaryWindow?.usedPercent ?: 0.0
-                    val remainingPercent = (100.0 - usedPercent).coerceIn(0.0, 100.0)
+                    val usedPercent = weeklyWindow?.usedPercent
+                    val remainingPercent = usedPercent?.let { (100.0 - it).coerceIn(0.0, 100.0) }
+                    val resetAtEpochMs = weeklyWindow?.resetAt?.let { it * 1000L }
 
-                    val resetAtEpochMs = primaryWindow?.resetAt?.let { it * 1000L }
-                        ?: secondaryWindow?.resetAt?.let { it * 1000L }
-                        ?: decoded.expiresAtEpochMs
+                    val fiveHourUsedPercent = fiveHourWindow?.usedPercent
+                    val fiveHourRemainingPercent = fiveHourUsedPercent?.let { (100.0 - it).coerceIn(0.0, 100.0) }
+                    val fiveHourResetAtEpochMs = fiveHourWindow?.resetAt?.let { it * 1000L }
 
-                    val isLimitReached = rateLimit?.limitReached == true || primaryWindow?.usedPercent?.let { it >= 100.0 } == true
+                    val isLimitReached = rateLimit?.limitReached == true || listOfNotNull(weeklyWindow, fiveHourWindow)
+                        .any { window -> window.usedPercent?.let { it >= 100.0 } == true }
                     val status = AuthStatus.AUTHENTICATED
 
-                    val resetDurationFormatted = primaryWindow?.resetAfterSeconds?.let { sec ->
-                        val hours = sec / 3600
-                        val mins = (sec % 3600) / 60
-                        if (hours > 0) "${hours}h ${mins}m" else "${mins}m"
-                    }
+                    val weeklyResetDurationFormatted = formatWindowDuration(weeklyWindow?.resetAfterSeconds)
+                    val limitReachedResetDuration = weeklyResetDurationFormatted
+                        ?: formatWindowDuration(fiveHourWindow?.resetAfterSeconds)
 
-                    val rateLimitInfo = RateLimitInfo(
-                        limitRequests = primaryWindow?.limitWindowSeconds?.toLong(),
-                        remainingRequests = null,
-                        resetRequestsDuration = resetDurationFormatted,
-                        limitTokens = null,
-                        remainingTokens = null,
-                        resetTokensDuration = null
-                    )
+                    val rateLimitInfo = if (weeklyResetDurationFormatted != null) {
+                        RateLimitInfo(
+                            limitRequests = null,
+                            remainingRequests = null,
+                            resetRequestsDuration = weeklyResetDurationFormatted,
+                            limitTokens = null,
+                            remainingTokens = null,
+                            resetTokensDuration = null
+                        )
+                    } else {
+                        null
+                    }
 
                     val creditsBalance = whamDto.credits?.balance?.toDoubleOrNull()
                     val bankedResetExpiresAtEpochMs = if (resetCreditsResponse is ApiResponse.Success) {
@@ -136,7 +145,11 @@ class RealOpenAiDataSource(
                         status = status,
                         fetchedAtEpochMs = now,
                         rateLimitInfo = rateLimitInfo,
-                        errorMessage = if (isLimitReached) "Usage limit reached. Resets in $resetDurationFormatted" else null,
+                        errorMessage = if (isLimitReached && limitReachedResetDuration != null) {
+                            "Usage limit reached. Resets in $limitReachedResetDuration"
+                        } else if (isLimitReached) {
+                            "Usage limit reached."
+                        } else null,
                         subscriptionRenewalEpochMs = subRenewalEpochMs,
                         subscriptionStartedAtEpochMs = decoded.subscriptionStartedAtEpochMs,
                         billingPeriod = billingPeriod,
@@ -144,7 +157,10 @@ class RealOpenAiDataSource(
                         willAutoRenew = willAutoRenew,
                         hasActiveSubscription = hasActiveSubscription,
                         bankedResets = whamDto.rateLimitResetCredits?.availableCount,
-                        bankedResetExpiresAtEpochMs = bankedResetExpiresAtEpochMs
+                        bankedResetExpiresAtEpochMs = bankedResetExpiresAtEpochMs,
+                        fiveHourRemainingPercent = fiveHourRemainingPercent,
+                        fiveHourUsedPercent = fiveHourUsedPercent,
+                        fiveHourResetAtEpochMs = fiveHourResetAtEpochMs
                     )
                     return Result.success(usage)
                 }
@@ -312,5 +328,82 @@ class RealOpenAiDataSource(
                 Result.success(usage)
             }
         }
+    }
+
+    private fun classifySubscriberWindows(
+        primaryWindow: ChatGptWindowDto?,
+        secondaryWindow: ChatGptWindowDto?
+    ): SubscriberQuotaWindows {
+        if (primaryWindow == null && secondaryWindow == null) {
+            return SubscriberQuotaWindows(fiveHour = null, weekly = null)
+        }
+
+        val windows = listOfNotNull(primaryWindow, secondaryWindow)
+        val classifiedKinds = windows.associateWith { windowKind(it.limitWindowSeconds) }
+
+        var fiveHourWindow = windows.firstOrNull { classifiedKinds[it] == SubscriberWindowKind.FIVE_HOUR }
+        var weeklyWindow = windows.firstOrNull { classifiedKinds[it] == SubscriberWindowKind.WEEKLY }
+        val unknownWindows = windows.filter { classifiedKinds[it] == SubscriberWindowKind.UNKNOWN }
+
+        when {
+            primaryWindow != null && secondaryWindow != null && fiveHourWindow == null && weeklyWindow == null -> {
+                fiveHourWindow = primaryWindow
+                weeklyWindow = secondaryWindow
+            }
+            windows.size == 1 && classifiedKinds[windows.single()] == SubscriberWindowKind.UNKNOWN -> {
+                weeklyWindow = windows.single()
+            }
+            fiveHourWindow != null && weeklyWindow == null && unknownWindows.size == 1 -> {
+                weeklyWindow = unknownWindows.single()
+            }
+            weeklyWindow != null && fiveHourWindow == null && unknownWindows.size == 1 && primaryWindow != null && secondaryWindow != null -> {
+                fiveHourWindow = unknownWindows.single()
+            }
+        }
+
+        return SubscriberQuotaWindows(
+            fiveHour = fiveHourWindow,
+            weekly = weeklyWindow
+        )
+    }
+
+    private fun windowKind(limitWindowSeconds: Long?): SubscriberWindowKind {
+        if (limitWindowSeconds == null) return SubscriberWindowKind.UNKNOWN
+        return when {
+            kotlin.math.abs(limitWindowSeconds - FIVE_HOUR_WINDOW_SECONDS) <= WINDOW_CLASSIFICATION_TOLERANCE_SECONDS -> SubscriberWindowKind.FIVE_HOUR
+            kotlin.math.abs(limitWindowSeconds - WEEKLY_WINDOW_SECONDS) <= WINDOW_CLASSIFICATION_TOLERANCE_SECONDS -> SubscriberWindowKind.WEEKLY
+            else -> SubscriberWindowKind.UNKNOWN
+        }
+    }
+
+    private fun formatWindowDuration(seconds: Long?): String? {
+        if (seconds == null) return null
+        val days = seconds / 86_400
+        val hours = (seconds % 86_400) / 3_600
+        val mins = (seconds % 3_600) / 60
+        return when {
+            days > 0 && hours > 0 -> "${days}d ${hours}h"
+            days > 0 -> "${days}d"
+            hours > 0 && mins > 0 -> "${hours}h ${mins}m"
+            hours > 0 -> "${hours}h"
+            else -> "${mins}m"
+        }
+    }
+
+    private data class SubscriberQuotaWindows(
+        val fiveHour: ChatGptWindowDto?,
+        val weekly: ChatGptWindowDto?
+    )
+
+    private enum class SubscriberWindowKind {
+        FIVE_HOUR,
+        WEEKLY,
+        UNKNOWN
+    }
+
+    private companion object {
+        const val FIVE_HOUR_WINDOW_SECONDS = 18_000L
+        const val WEEKLY_WINDOW_SECONDS = 604_800L
+        const val WINDOW_CLASSIFICATION_TOLERANCE_SECONDS = 300L
     }
 }
