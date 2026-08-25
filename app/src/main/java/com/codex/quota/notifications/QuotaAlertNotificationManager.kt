@@ -12,7 +12,43 @@ import androidx.core.app.NotificationManagerCompat
 import com.codex.quota.R
 import com.codex.quota.domain.model.CodexAccount
 import com.codex.quota.domain.model.CodexUsage
+import com.codex.quota.domain.model.QuotaWindow
+import com.codex.quota.domain.model.isApiKeyPlan
 import com.codex.quota.ui.MainActivity
+import com.codex.quota.ui.util.isApiKeyQuotaUsage
+
+fun buildQuotaAlertTitle(window: QuotaWindow? = QuotaWindow.WEEKLY, isApiKey: Boolean = false): String {
+    if (isApiKey || window == null) {
+        return "Low Quota Alert"
+    }
+    return "Low ${window.label} Quota Alert"
+}
+
+fun buildQuotaAlertContentText(
+    nickname: String,
+    remainingPercent: Int,
+    window: QuotaWindow? = QuotaWindow.WEEKLY,
+    isApiKey: Boolean = false
+): String {
+    if (isApiKey || window == null) {
+        return "$nickname has only $remainingPercent% quota remaining."
+    }
+    return "$nickname has only $remainingPercent% ${window.label.lowercase()} quota remaining."
+}
+
+fun buildQuotaAlertBigText(
+    nickname: String,
+    planDisplayName: String,
+    thresholdPercent: Int,
+    remainingPercent: Int,
+    window: QuotaWindow? = QuotaWindow.WEEKLY,
+    isApiKey: Boolean = false
+): String {
+    if (isApiKey || window == null) {
+        return "$nickname ($planDisplayName) is below the $thresholdPercent% threshold at $remainingPercent% remaining."
+    }
+    return "$nickname ($planDisplayName) is below the $thresholdPercent% threshold at $remainingPercent% remaining in the ${window.label.lowercase()} window."
+}
 
 class QuotaAlertNotificationManager(private val context: Context) {
 
@@ -36,37 +72,73 @@ class QuotaAlertNotificationManager(private val context: Context) {
         }
     }
 
-    fun showLowQuotaAlert(account: CodexAccount, usage: CodexUsage, thresholdPercent: Int) {
-        val remaining = usage.remainingPercent?.toInt() ?: return
+    fun showLowQuotaAlert(
+        account: CodexAccount,
+        usage: CodexUsage,
+        thresholdPercent: Int,
+        window: QuotaWindow = QuotaWindow.WEEKLY
+    ) {
+        val isApiKey = account.planType.isApiKeyPlan || usage.isApiKeyQuotaUsage(account.planType)
+        val effectiveWindow = if (isApiKey) null else window
+        val remaining = when {
+            isApiKey -> usage.remainingPercent?.toInt()
+            window == QuotaWindow.WEEKLY -> usage.remainingPercent?.toInt()
+            window == QuotaWindow.FIVE_HOUR -> usage.fiveHourRemainingPercent?.toInt() ?: usage.remainingPercent?.toInt()
+            else -> usage.remainingPercent?.toInt()
+        } ?: return
+
         val deepLinkUri = Uri.parse("codexquota://account/${account.id}")
         val intent = Intent(Intent.ACTION_VIEW, deepLinkUri, context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
 
+        val requestKey = if (window == QuotaWindow.FIVE_HOUR && !isApiKey) {
+            "${account.id}_quota_${window.name}"
+        } else {
+            "${account.id}_quota"
+        }
         val pendingIntent = PendingIntent.getActivity(
             context,
-            (account.id + "_quota").hashCode(),
+            requestKey.hashCode(),
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val title = buildQuotaAlertTitle(effectiveWindow, isApiKey)
+        val contentText = buildQuotaAlertContentText(account.nickname, remaining, effectiveWindow, isApiKey)
+        val bigText = buildQuotaAlertBigText(
+            nickname = account.nickname,
+            planDisplayName = account.planType.displayName,
+            thresholdPercent = thresholdPercent,
+            remainingPercent = remaining,
+            window = effectiveWindow,
+            isApiKey = isApiKey
+        )
+
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("Low Codex Quota Alert")
-            .setContentText("${account.nickname} has only $remaining% quota remaining.")
-            .setStyle(
-                NotificationCompat.BigTextStyle()
-                    .bigText("${account.nickname} (${account.planType.displayName}) is below the $thresholdPercent% threshold at $remaining% remaining.")
-            )
+            .setContentTitle(title)
+            .setContentText(contentText)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(bigText))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
             .build()
 
         try {
+            val tag = if (isApiKey || window == QuotaWindow.WEEKLY) {
+                NOTIFICATION_TAG_PREFIX + account.id
+            } else {
+                NOTIFICATION_TAG_PREFIX + window.name.lowercase() + "_" + account.id
+            }
+            val notificationId = if (window == QuotaWindow.FIVE_HOUR && !isApiKey) {
+                NOTIFICATION_ID_BASE + (account.id + "_" + window.name).hashCode()
+            } else {
+                NOTIFICATION_ID_BASE + account.id.hashCode()
+            }
             notificationManager.notify(
-                NOTIFICATION_TAG_PREFIX + account.id,
-                NOTIFICATION_ID_BASE + account.id.hashCode(),
+                tag,
+                notificationId,
                 notification
             )
         } catch (e: SecurityException) {

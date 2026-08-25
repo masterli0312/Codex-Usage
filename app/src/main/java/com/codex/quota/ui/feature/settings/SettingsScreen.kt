@@ -313,6 +313,30 @@ fun SettingsScreen(
                             )
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Include 5-hour quota warnings", style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                "Weekly alerts are always monitored; enable this to apply your selected thresholds to the 5-hour window too",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = preferences.includeFiveHourQuotaAlerts,
+                            onCheckedChange = {
+                                if (it) checkAndRequestNotificationPermission()
+                                viewModel.setIncludeFiveHourQuotaAlerts(it)
+                            }
+                        )
+                    }
                 }
             }
 

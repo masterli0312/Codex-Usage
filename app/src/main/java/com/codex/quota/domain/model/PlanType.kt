@@ -15,3 +15,6 @@ enum class PlanType(val displayName: String) {
         }
     }
 }
+
+val PlanType.isApiKeyPlan: Boolean
+    get() = this == PlanType.API_TIER_1 || this == PlanType.API_TIER_2 || this == PlanType.API_TIER_5

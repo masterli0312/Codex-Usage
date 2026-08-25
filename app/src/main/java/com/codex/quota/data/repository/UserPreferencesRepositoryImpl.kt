@@ -2,6 +2,7 @@ package com.codex.quota.data.repository
 
 import com.codex.quota.data.local.DataStoreManager
 import com.codex.quota.domain.model.AppThemeMode
+import com.codex.quota.domain.model.QuotaWindow
 import com.codex.quota.domain.model.RefreshIntervalMinutes
 import com.codex.quota.domain.model.UserPreferences
 import com.codex.quota.domain.model.WidgetThemeMode
@@ -50,6 +51,10 @@ class UserPreferencesRepositoryImpl(
         dataStoreManager.setQuotaAlertsEnabled(enabled)
     }
 
+    override suspend fun setIncludeFiveHourQuotaAlerts(enabled: Boolean) {
+        dataStoreManager.setIncludeFiveHourQuotaAlerts(enabled)
+    }
+
     override suspend fun setQuotaAlertThresholds(thresholds: Set<Int>) {
         dataStoreManager.setQuotaAlertThresholds(thresholds)
     }
@@ -66,12 +71,12 @@ class UserPreferencesRepositoryImpl(
         dataStoreManager.setRenewalBannerDismissed(accountId, dismissed)
     }
 
-    override suspend fun getLastNotifiedQuotaThreshold(accountId: String): Int? {
-        return dataStoreManager.getLastNotifiedQuotaThreshold(accountId)
+    override suspend fun getLastNotifiedQuotaThreshold(accountId: String, window: QuotaWindow): Int? {
+        return dataStoreManager.getLastNotifiedQuotaThreshold(accountId, window)
     }
 
-    override suspend fun setLastNotifiedQuotaThreshold(accountId: String, threshold: Int?) {
-        dataStoreManager.setLastNotifiedQuotaThreshold(accountId, threshold)
+    override suspend fun setLastNotifiedQuotaThreshold(accountId: String, threshold: Int?, window: QuotaWindow) {
+        dataStoreManager.setLastNotifiedQuotaThreshold(accountId, threshold, window)
     }
 
     override suspend fun isSignedOutAlertNotified(accountId: String): Boolean {

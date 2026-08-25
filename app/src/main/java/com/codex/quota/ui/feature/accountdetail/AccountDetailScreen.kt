@@ -66,7 +66,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.codex.quota.domain.model.AuthStatus
+import com.codex.quota.domain.model.weeklyQuotaPacing
 import com.codex.quota.ui.components.CircularQuotaGauge
+import com.codex.quota.ui.components.QuotaPacingBadge
 import com.codex.quota.ui.components.RelativeTimeText
 import com.codex.quota.ui.components.StatusBadge
 import com.codex.quota.ui.util.formatQuotaPercent
@@ -187,8 +189,8 @@ fun AccountDetailScreen(
             val account = data.account
             val usage = data.usage
             val status = usage?.status ?: account.authStatus
-            val subscriberWindows = usage.subscriberQuotaWindows()
-            val primarySubscriberWindow = usage.primarySubscriberQuotaWindow()
+            val subscriberWindows = usage.subscriberQuotaWindows(account.planType)
+            val primarySubscriberWindow = usage.primarySubscriberQuotaWindow(account.planType)
             val remainingPercent = primarySubscriberWindow?.remainingPercent ?: usage?.remainingPercent
             val usedPercent = primarySubscriberWindow?.usedPercent
                 ?: usage?.usedPercent
@@ -311,7 +313,7 @@ fun AccountDetailScreen(
                             Spacer(modifier = Modifier.height(20.dp))
 
                             // 3-Metric Summary Box
-                            val resetStr = if (usage.isApiKeyQuotaUsage()) {
+                            val resetStr = if (usage.isApiKeyQuotaUsage(account.planType)) {
                                 usage?.rateLimitInfo?.resetRequestsDuration
                                     ?: usage?.rateLimitInfo?.resetTokensDuration
                                     ?: "Active"
@@ -386,6 +388,16 @@ fun AccountDetailScreen(
                                         color = MaterialTheme.colorScheme.secondary
                                     )
                                 }
+                            }
+
+                            val pacing = usage.weeklyQuotaPacing(account.planType)
+                            if (pacing != null) {
+                                Spacer(modifier = Modifier.height(14.dp))
+                                QuotaPacingBadge(
+                                    pacing = pacing,
+                                    compact = false,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
                             }
 
                             if (subscriberWindows.isNotEmpty()) {

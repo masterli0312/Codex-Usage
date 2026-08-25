@@ -11,6 +11,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.codex.quota.domain.model.AppThemeMode
+import com.codex.quota.domain.model.QuotaWindow
 import com.codex.quota.domain.model.RefreshIntervalMinutes
 import com.codex.quota.domain.model.UserPreferences
 import com.codex.quota.domain.model.WidgetThemeMode
@@ -31,6 +32,7 @@ class DataStoreManager(private val context: Context) {
         val REFRESH_ON_APP_OPEN = booleanPreferencesKey("refresh_on_app_open")
         val SIGNED_OUT_NOTIFICATIONS = booleanPreferencesKey("signed_out_notifications_enabled")
         val QUOTA_ALERTS_ENABLED = booleanPreferencesKey("quota_alerts_enabled")
+        val INCLUDE_FIVE_HOUR_QUOTA_ALERTS = booleanPreferencesKey("include_five_hour_quota_alerts")
         val QUOTA_ALERT_THRESHOLDS = stringSetPreferencesKey("quota_alert_thresholds_set")
         val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         val DISMISSED_RENEWAL_BANNERS = stringSetPreferencesKey("dismissed_renewal_banners")
@@ -61,6 +63,7 @@ class DataStoreManager(private val context: Context) {
             refreshOnAppOpen = prefs[PreferencesKeys.REFRESH_ON_APP_OPEN] ?: true,
             signedOutNotificationsEnabled = prefs[PreferencesKeys.SIGNED_OUT_NOTIFICATIONS] ?: true,
             quotaAlertsEnabled = prefs[PreferencesKeys.QUOTA_ALERTS_ENABLED] ?: true,
+            includeFiveHourQuotaAlerts = prefs[PreferencesKeys.INCLUDE_FIVE_HOUR_QUOTA_ALERTS] ?: false,
             quotaAlertThresholds = thresholds,
             hasCompletedOnboarding = prefs[PreferencesKeys.ONBOARDING_COMPLETED] ?: false,
             dismissedRenewalBannerAccountIds = prefs[PreferencesKeys.DISMISSED_RENEWAL_BANNERS] ?: emptySet()
@@ -117,6 +120,12 @@ class DataStoreManager(private val context: Context) {
         }
     }
 
+    suspend fun setIncludeFiveHourQuotaAlerts(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[PreferencesKeys.INCLUDE_FIVE_HOUR_QUOTA_ALERTS] = enabled
+        }
+    }
+
     suspend fun setQuotaAlertThresholds(thresholds: Set<Int>) {
         context.dataStore.edit { prefs ->
             prefs[PreferencesKeys.QUOTA_ALERT_THRESHOLDS] = thresholds.map { it.toString() }.toSet()
@@ -157,20 +166,27 @@ class DataStoreManager(private val context: Context) {
         }
     }
 
-    suspend fun getLastNotifiedQuotaThreshold(accountId: String): Int? {
+    suspend fun getLastNotifiedQuotaThreshold(accountId: String, window: QuotaWindow = QuotaWindow.WEEKLY): Int? {
         val prefs = context.dataStore.data.first()
-        val key = intPreferencesKey("last_quota_alert_threshold_$accountId")
+        val key = quotaAlertThresholdKey(accountId, window)
         return prefs[key]
     }
 
-    suspend fun setLastNotifiedQuotaThreshold(accountId: String, threshold: Int?) {
-        val key = intPreferencesKey("last_quota_alert_threshold_$accountId")
+    suspend fun setLastNotifiedQuotaThreshold(accountId: String, threshold: Int?, window: QuotaWindow = QuotaWindow.WEEKLY) {
+        val key = quotaAlertThresholdKey(accountId, window)
         context.dataStore.edit { prefs ->
             if (threshold != null) {
                 prefs[key] = threshold
             } else {
                 prefs.remove(key)
             }
+        }
+    }
+
+    private fun quotaAlertThresholdKey(accountId: String, window: QuotaWindow): Preferences.Key<Int> {
+        return when (window) {
+            QuotaWindow.WEEKLY -> intPreferencesKey("last_quota_alert_threshold_$accountId")
+            QuotaWindow.FIVE_HOUR -> intPreferencesKey("last_quota_alert_threshold_5h_$accountId")
         }
     }
 

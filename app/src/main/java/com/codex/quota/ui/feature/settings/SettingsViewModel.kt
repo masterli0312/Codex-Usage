@@ -86,6 +86,12 @@ class SettingsViewModel(
         }
     }
 
+    fun setIncludeFiveHourQuotaAlerts(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesRepository.setIncludeFiveHourQuotaAlerts(enabled)
+        }
+    }
+
     fun toggleQuotaAlertThreshold(threshold: Int) {
         viewModelScope.launch {
             preferencesRepository.toggleQuotaAlertThreshold(threshold)

@@ -1,6 +1,7 @@
 package com.codex.quota.domain.repository
 
 import com.codex.quota.domain.model.AppThemeMode
+import com.codex.quota.domain.model.QuotaWindow
 import com.codex.quota.domain.model.RefreshIntervalMinutes
 import com.codex.quota.domain.model.UserPreferences
 import com.codex.quota.domain.model.WidgetThemeMode
@@ -17,12 +18,13 @@ interface UserPreferencesRepository {
     suspend fun setRefreshOnAppOpen(enabled: Boolean)
     suspend fun setSignedOutNotificationsEnabled(enabled: Boolean)
     suspend fun setQuotaAlertsEnabled(enabled: Boolean)
+    suspend fun setIncludeFiveHourQuotaAlerts(enabled: Boolean)
     suspend fun setQuotaAlertThresholds(thresholds: Set<Int>)
     suspend fun toggleQuotaAlertThreshold(threshold: Int)
     suspend fun setHasCompletedOnboarding(completed: Boolean)
     suspend fun setRenewalBannerDismissed(accountId: String, dismissed: Boolean = true)
-    suspend fun getLastNotifiedQuotaThreshold(accountId: String): Int?
-    suspend fun setLastNotifiedQuotaThreshold(accountId: String, threshold: Int?)
+    suspend fun getLastNotifiedQuotaThreshold(accountId: String, window: QuotaWindow = QuotaWindow.WEEKLY): Int?
+    suspend fun setLastNotifiedQuotaThreshold(accountId: String, threshold: Int?, window: QuotaWindow = QuotaWindow.WEEKLY)
     suspend fun isSignedOutAlertNotified(accountId: String): Boolean
     suspend fun setSignedOutAlertNotified(accountId: String, notified: Boolean)
 }

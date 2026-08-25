@@ -36,7 +36,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.codex.quota.domain.model.AccountWithUsage
 import com.codex.quota.domain.model.AuthStatus
+import com.codex.quota.domain.model.QuotaWindow
+import com.codex.quota.domain.model.weeklyQuotaPacing
 import com.codex.quota.ui.theme.Red500
+import com.codex.quota.ui.util.formatQuotaPercent
 import com.codex.quota.ui.util.formatQuotaSummary
 import com.codex.quota.ui.util.formatResetCountdown
 import com.codex.quota.ui.util.isApiKeyQuotaUsage
@@ -133,9 +136,11 @@ fun AccountCard(
 
 @Composable
 private fun ActiveQuotaSection(item: AccountWithUsage) {
+    val account = item.account
     val usage = item.usage
-    val subscriberWindows = usage.subscriberQuotaWindows()
-    val primarySubscriberWindow = usage.primarySubscriberQuotaWindow()
+    val isApiKey = usage.isApiKeyQuotaUsage(account.planType)
+    val subscriberWindows = usage.subscriberQuotaWindows(account.planType)
+    val primarySubscriberWindow = usage.primarySubscriberQuotaWindow(account.planType)
     val remainingPercent = primarySubscriberWindow?.remainingPercent ?: usage?.remainingPercent
     val rateLimitInfo = usage?.rateLimitInfo
 
@@ -155,7 +160,7 @@ private fun ActiveQuotaSection(item: AccountWithUsage) {
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            if (usage.isApiKeyQuotaUsage()) {
+            if (isApiKey) {
                 if (rateLimitInfo?.limitTokens != null && rateLimitInfo.remainingTokens != null) {
                     val formattedTokens = NumberFormat.getNumberInstance(Locale.US).format(rateLimitInfo.remainingTokens)
                     val formattedLimit = NumberFormat.getNumberInstance(Locale.US).format(rateLimitInfo.limitTokens)
@@ -204,35 +209,103 @@ private fun ActiveQuotaSection(item: AccountWithUsage) {
                     )
                 }
             } else if (subscriberWindows.isNotEmpty()) {
-                subscriberWindows.forEach { window ->
-                    Row(
+                val weeklyWindow = subscriberWindows.firstOrNull { it.window == QuotaWindow.WEEKLY || it.label == "Weekly" }
+                val fiveHourWindow = subscriberWindows.firstOrNull { it.window == QuotaWindow.FIVE_HOUR || it.label == "5-hour" }
+                val pacing = usage.weeklyQuotaPacing(account.planType)
+
+                // 1. Weekly window row (Primary)
+                if (weeklyWindow != null) {
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        verticalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
-                        Text(
-                            text = "${window.label} quota",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = formatQuotaSummary(window),
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                            color = if (window.label == "Weekly") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Weekly quota",
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = "${formatQuotaPercent(weeklyWindow.remainingPercent)} left • ${formatResetCountdown(weeklyWindow.resetAtEpochMs)}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        LinearQuotaBar(
+                            remainingPercent = weeklyWindow.remainingPercent,
+                            height = 4.dp
                         )
                     }
-                    Row(
+                }
+
+                // 2. Pacing treatment immediately following weekly row
+                if (pacing != null) {
+                    QuotaPacingBadge(
+                        pacing = pacing,
+                        compact = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                // 3. 5-hour window row (Secondary)
+                if (fiveHourWindow != null) {
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        verticalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
-                        Text(
-                            text = "${window.label} reset",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "5-hour quota",
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "${formatQuotaPercent(fiveHourWindow.remainingPercent)} left • ${formatResetCountdown(fiveHourWindow.resetAtEpochMs)}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        LinearQuotaBar(
+                            remainingPercent = fiveHourWindow.remainingPercent,
+                            height = 4.dp
                         )
-                        Text(
-                            text = formatResetCountdown(window.resetAtEpochMs),
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                            color = MaterialTheme.colorScheme.onSurface
+                    }
+                }
+
+                // Any other subscriber windows if present
+                val otherWindows = subscriberWindows.filter { it != weeklyWindow && it != fiveHourWindow }
+                otherWindows.forEach { window ->
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "${window.label} quota",
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "${formatQuotaPercent(window.remainingPercent)} left • ${formatResetCountdown(window.resetAtEpochMs)}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        LinearQuotaBar(
+                            remainingPercent = window.remainingPercent,
+                            height = 4.dp
                         )
                     }
                 }
@@ -275,7 +348,7 @@ private fun ActiveQuotaSection(item: AccountWithUsage) {
         }
 
         val footerText = when {
-            usage.isApiKeyQuotaUsage() -> {
+            isApiKey -> {
                 val resetDuration = rateLimitInfo?.resetTokensDuration
                     ?: rateLimitInfo?.resetRequestsDuration
                     ?: (if (usage?.resetAtEpochMs != null) "Rolling window" else "Active")

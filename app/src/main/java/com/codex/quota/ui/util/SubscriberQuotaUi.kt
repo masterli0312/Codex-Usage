@@ -1,48 +1,57 @@
 package com.codex.quota.ui.util
 
 import com.codex.quota.domain.model.CodexUsage
+import com.codex.quota.domain.model.PlanType
+import com.codex.quota.domain.model.QuotaWindow
+import com.codex.quota.domain.model.isApiKeyPlan
 import kotlin.math.roundToInt
 
 data class SubscriberQuotaWindowUi(
     val label: String,
     val remainingPercent: Double?,
     val usedPercent: Double?,
-    val resetAtEpochMs: Long?
+    val resetAtEpochMs: Long?,
+    val window: QuotaWindow? = null
 )
 
-fun CodexUsage?.isApiKeyQuotaUsage(): Boolean {
+fun CodexUsage?.isApiKeyQuotaUsage(planType: PlanType? = null): Boolean {
+    if (planType?.isApiKeyPlan == true) return true
     return this?.rateLimitInfo?.limitTokens != null || this?.rateLimitInfo?.limitRequests != null
 }
 
-fun CodexUsage?.subscriberQuotaWindows(): List<SubscriberQuotaWindowUi> {
-    if (this == null || isApiKeyQuotaUsage()) return emptyList()
+fun CodexUsage?.subscriberQuotaWindows(planType: PlanType? = null): List<SubscriberQuotaWindowUi> {
+    if (this == null || isApiKeyQuotaUsage(planType)) return emptyList()
 
     val windows = mutableListOf<SubscriberQuotaWindowUi>()
 
-    if (fiveHourRemainingPercent != null || fiveHourUsedPercent != null || fiveHourResetAtEpochMs != null) {
-        windows += SubscriberQuotaWindowUi(
-            label = "5-hour",
-            remainingPercent = fiveHourRemainingPercent,
-            usedPercent = fiveHourUsedPercent,
-            resetAtEpochMs = fiveHourResetAtEpochMs
-        )
-    }
-
+    // Weekly window first (primary)
     if (remainingPercent != null || usedPercent != null || resetAtEpochMs != null) {
         windows += SubscriberQuotaWindowUi(
             label = "Weekly",
             remainingPercent = remainingPercent,
             usedPercent = usedPercent,
-            resetAtEpochMs = resetAtEpochMs
+            resetAtEpochMs = resetAtEpochMs,
+            window = QuotaWindow.WEEKLY
+        )
+    }
+
+    // 5-hour window second (secondary)
+    if (fiveHourRemainingPercent != null || fiveHourUsedPercent != null || fiveHourResetAtEpochMs != null) {
+        windows += SubscriberQuotaWindowUi(
+            label = "5-hour",
+            remainingPercent = fiveHourRemainingPercent,
+            usedPercent = fiveHourUsedPercent,
+            resetAtEpochMs = fiveHourResetAtEpochMs,
+            window = QuotaWindow.FIVE_HOUR
         )
     }
 
     return windows
 }
 
-fun CodexUsage?.primarySubscriberQuotaWindow(): SubscriberQuotaWindowUi? {
-    val windows = subscriberQuotaWindows()
-    return windows.firstOrNull { it.label == "Weekly" } ?: windows.firstOrNull()
+fun CodexUsage?.primarySubscriberQuotaWindow(planType: PlanType? = null): SubscriberQuotaWindowUi? {
+    val windows = subscriberQuotaWindows(planType)
+    return windows.firstOrNull { it.window == QuotaWindow.WEEKLY || it.label == "Weekly" } ?: windows.firstOrNull()
 }
 
 fun formatQuotaPercent(percent: Double?): String {
