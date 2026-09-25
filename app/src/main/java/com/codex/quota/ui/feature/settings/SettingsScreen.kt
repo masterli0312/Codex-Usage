@@ -1,4 +1,6 @@
 package com.codex.quota.ui.feature.settings
+import androidx.compose.ui.res.stringResource
+import com.codex.quota.R
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -60,10 +62,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import com.codex.quota.domain.model.AppThemeMode
 import com.codex.quota.domain.model.RefreshIntervalMinutes
 import com.codex.quota.domain.model.WidgetThemeMode
 import com.codex.quota.ui.theme.Red500
+import com.codex.quota.widget.WidgetUpdateHelper
+import kotlinx.coroutines.launch
+import com.codex.quota.CodexQuotaApplication
+import com.codex.quota.notifications.QuotaAlertNotificationManager
+import com.codex.quota.notifications.SignedOutNotificationManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,6 +83,7 @@ fun SettingsScreen(
 ) {
     val preferences by viewModel.preferencesState.collectAsState()
     val context = LocalContext.current
+    val selectedLanguage = AppLanguage.fromLanguageTags(AppCompatDelegate.getApplicationLocales().toLanguageTags())
     val snackbarHostState = remember { SnackbarHostState() }
     var showClearDataDialog by remember { mutableStateOf(false) }
 
@@ -106,7 +116,7 @@ fun SettingsScreen(
             }
         },
         topBar = {
-            TopAppBar(title = { Text("Settings", fontWeight = FontWeight.Bold) })
+            TopAppBar(title = { Text(stringResource(R.string.settings_title), fontWeight = FontWeight.Bold) })
         }
     ) { padding ->
         Column(
@@ -117,9 +127,37 @@ fun SettingsScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            SettingsSection(title = stringResource(R.string.language_title), icon = Icons.Default.ColorLens) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    AppLanguage.entries.forEach { language ->
+                        val label = when (language) {
+                            AppLanguage.FOLLOW_SYSTEM -> R.string.language_follow_system
+                            AppLanguage.SIMPLIFIED_CHINESE -> R.string.language_chinese
+                            AppLanguage.ENGLISH -> R.string.language_english
+                        }
+                        FilterChip(
+                            selected = selectedLanguage == language,
+                            onClick = {
+                                AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(language.languageTag))
+                                val applicationContext = context.applicationContext
+                                (applicationContext as CodexQuotaApplication).applicationScope.launch {
+                                    QuotaAlertNotificationManager(applicationContext)
+                                    SignedOutNotificationManager(applicationContext)
+                                    WidgetUpdateHelper.updateAllWidgets(applicationContext)
+                                }
+                            },
+                            label = { Text(stringResource(label)) }
+                        )
+                    }
+                }
+            }
+
             // Appearance Section
-            SettingsSection(title = "Appearance & Theme", icon = Icons.Default.ColorLens) {
-                Text("App Theme", style = MaterialTheme.typography.bodyMedium)
+            SettingsSection(title = stringResource(R.string.appearance_theme), icon = Icons.Default.ColorLens) {
+                Text(stringResource(R.string.app_theme), style = MaterialTheme.typography.bodyMedium)
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -129,7 +167,11 @@ fun SettingsScreen(
                         FilterChip(
                             selected = preferences.themeMode == mode,
                             onClick = { viewModel.setThemeMode(mode) },
-                            label = { Text(mode.name.lowercase().replaceFirstChar { it.uppercase() }) },
+                            label = { Text(stringResource(when (mode) {
+                                AppThemeMode.SYSTEM -> R.string.theme_system
+                                AppThemeMode.LIGHT -> R.string.theme_light
+                                AppThemeMode.DARK -> R.string.theme_dark
+                            })) },
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -143,9 +185,9 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Dynamic Colors (Material You)", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.dynamic_colors_material_you), style = MaterialTheme.typography.bodyMedium)
                         Text(
-                            "Adaptive palette based on system wallpaper",
+                            stringResource(R.string.adaptive_palette_based_on_system_wallpaper),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -158,7 +200,7 @@ fun SettingsScreen(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                Text("Home-Screen Widget Style", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.home_screen_widget_style), style = MaterialTheme.typography.bodyMedium)
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -168,7 +210,10 @@ fun SettingsScreen(
                         FilterChip(
                             selected = preferences.widgetThemeMode == mode,
                             onClick = { viewModel.setWidgetThemeMode(context, mode) },
-                            label = { Text(mode.displayName) },
+                            label = { Text(stringResource(when (mode) {
+                                WidgetThemeMode.DARK_OBSIDIAN -> R.string.widget_theme_dark
+                                WidgetThemeMode.SYSTEM_MATERIAL_YOU -> R.string.widget_theme_material
+                            })) },
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -176,16 +221,16 @@ fun SettingsScreen(
             }
 
             // Sync Section
-            SettingsSection(title = "Background Synchronization", icon = Icons.Default.Sync) {
+            SettingsSection(title = stringResource(R.string.background_synchronization), icon = Icons.Default.Sync) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Periodic Background Sync", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.periodic_background_sync), style = MaterialTheme.typography.bodyMedium)
                         Text(
-                            if (preferences.backgroundSyncEnabled) "App wakes periodically in background to refresh quotas" else "Disabled — app only refreshes when opened",
+                            if (preferences.backgroundSyncEnabled) stringResource(R.string.app_wakes_periodically_in_background_to_refresh_quotas) else stringResource(R.string.disabled_app_only_refreshes_when_opened),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -198,7 +243,7 @@ fun SettingsScreen(
 
                 if (preferences.backgroundSyncEnabled) {
                     Spacer(modifier = Modifier.height(14.dp))
-                    Text("Refresh Frequency", style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.refresh_frequency), style = MaterialTheme.typography.bodyMedium)
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Row(
@@ -214,7 +259,13 @@ fun SettingsScreen(
                             FilterChip(
                                 selected = preferences.refreshInterval == interval,
                                 onClick = { viewModel.setRefreshInterval(context, interval) },
-                                label = { Text(interval.label, fontSize = 12.sp) },
+                                label = { Text(stringResource(when (interval) {
+                                    RefreshIntervalMinutes.MINUTES_15 -> R.string.interval_15_minutes
+                                    RefreshIntervalMinutes.MINUTES_30 -> R.string.interval_30_minutes
+                                    RefreshIntervalMinutes.HOURS_1 -> R.string.interval_1_hour
+                                    RefreshIntervalMinutes.HOURS_3 -> R.string.interval_3_hours
+                                    RefreshIntervalMinutes.HOURS_6 -> R.string.interval_6_hours
+                                }), fontSize = 12.sp) },
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -229,9 +280,9 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Refresh on App Open", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.refresh_on_app_open), style = MaterialTheme.typography.bodyMedium)
                         Text(
-                            "Automatically checks for stale data upon launching the app",
+                            stringResource(R.string.automatically_checks_for_stale_data_upon_launching_the_app),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -244,16 +295,16 @@ fun SettingsScreen(
             }
 
             // Notifications Section
-            SettingsSection(title = "Notifications & Alerts", icon = Icons.Default.Notifications) {
+            SettingsSection(title = stringResource(R.string.notifications_alerts), icon = Icons.Default.Notifications) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Signed-Out Alerts", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.signed_out_alerts), style = MaterialTheme.typography.bodyMedium)
                         Text(
-                            "Sends an Android notification when account tokens expire",
+                            stringResource(R.string.sends_an_android_notification_when_account_tokens_expire),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -275,9 +326,9 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Low Quota Warnings", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.low_quota_warnings), style = MaterialTheme.typography.bodyMedium)
                         Text(
-                            "Alerts when an account reaches critical quota thresholds",
+                            stringResource(R.string.alerts_when_an_account_reaches_critical_quota_thresholds),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -294,7 +345,7 @@ fun SettingsScreen(
                 if (preferences.quotaAlertsEnabled) {
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
-                        "Alert Thresholds (Toggle Multi-Select)",
+                        stringResource(R.string.alert_thresholds_toggle_multi_select),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -308,7 +359,7 @@ fun SettingsScreen(
                             FilterChip(
                                 selected = isSelected,
                                 onClick = { viewModel.toggleQuotaAlertThreshold(threshold) },
-                                label = { Text("≤ $threshold%") },
+                                label = { Text(stringResource(R.string.threshold_label, threshold)) },
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -322,9 +373,9 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Include 5-hour quota warnings", style = MaterialTheme.typography.bodyMedium)
+                            Text(stringResource(R.string.include_5_hour_quota_warnings), style = MaterialTheme.typography.bodyMedium)
                             Text(
-                                "Weekly alerts are always monitored; enable this to apply your selected thresholds to the 5-hour window too",
+                                stringResource(R.string.weekly_alerts_are_always_monitored_enable_this_to_apply_your_sele),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -341,9 +392,9 @@ fun SettingsScreen(
             }
 
             // Privacy & Security Section
-            SettingsSection(title = "Privacy & Local Storage", icon = Icons.Default.Security) {
+            SettingsSection(title = stringResource(R.string.privacy_local_storage), icon = Icons.Default.Security) {
                 Text(
-                    text = "• Zero Telemetry: No analytics, tracking, or remote error reporting.\n• Hardware Encryption: Credentials isolated in Android Keystore AES-256-GCM.\n• No Cloud Relay: App communicates directly with OpenAI APIs exclusively over HTTPS.",
+                    text = stringResource(R.string.zero_telemetry_no_analytics_tracking_or_remote_error_reporting_n_),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 20.sp
@@ -359,7 +410,7 @@ fun SettingsScreen(
                 ) {
                     Icon(imageVector = Icons.Default.DeleteForever, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Clear All Local Data & Secrets")
+                    Text(stringResource(R.string.clear_all_local_data_secrets))
                 }
             }
 
@@ -383,8 +434,8 @@ fun SettingsScreen(
                     Icon(imageVector = Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("About & Community", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                        Text("Open-source notices, app version, and GitHub repo", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.about_community), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                        Text(stringResource(R.string.open_source_notices_app_version_and_github_repo), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Icon(imageVector = Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
@@ -396,8 +447,8 @@ fun SettingsScreen(
         if (showClearDataDialog) {
             AlertDialog(
                 onDismissRequest = { showClearDataDialog = false },
-                title = { Text("Clear All Data?") },
-                text = { Text("This will permanently delete all registered accounts, cached usage snapshots, and hardware-encrypted keys from this device.") },
+                title = { Text(stringResource(R.string.clear_all_data)) },
+                text = { Text(stringResource(R.string.this_will_permanently_delete_all_registered_accounts_cached_usage)) },
                 confirmButton = {
                     Button(
                         onClick = {
@@ -406,12 +457,12 @@ fun SettingsScreen(
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Red500)
                     ) {
-                        Text("Clear Everything", color = Color.White)
+                        Text(stringResource(R.string.clear_everything), color = Color.White)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showClearDataDialog = false }) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.action_cancel))
                     }
                 }
             )

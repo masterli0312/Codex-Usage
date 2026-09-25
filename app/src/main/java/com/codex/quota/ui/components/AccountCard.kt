@@ -1,4 +1,7 @@
 package com.codex.quota.ui.components
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
+import com.codex.quota.R
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -28,6 +31,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -43,6 +48,9 @@ import com.codex.quota.ui.util.formatQuotaPercent
 import com.codex.quota.ui.util.formatQuotaSummary
 import com.codex.quota.ui.util.formatResetCountdown
 import com.codex.quota.ui.util.isApiKeyQuotaUsage
+import com.codex.quota.ui.util.localizedWindowLabel
+import com.codex.quota.ui.util.localizedPlanName
+import com.codex.quota.ui.util.localizedResetDuration
 import com.codex.quota.ui.util.primarySubscriberQuotaWindow
 import com.codex.quota.ui.util.subscriberQuotaWindows
 import java.text.NumberFormat
@@ -55,6 +63,7 @@ fun AccountCard(
     onSignInClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val account = item.account
     val usage = item.usage
     val status = usage?.status ?: account.authStatus
@@ -104,7 +113,7 @@ fun AccountCard(
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = account.planType.displayName,
+                        text = localizedPlanName(context, account.planType),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -136,6 +145,8 @@ fun AccountCard(
 
 @Composable
 private fun ActiveQuotaSection(item: AccountWithUsage) {
+    val context = LocalContext.current
+    val locale = LocalConfiguration.current.locales[0]
     val account = item.account
     val usage = item.usage
     val isApiKey = usage.isApiKeyQuotaUsage(account.planType)
@@ -169,7 +180,7 @@ private fun ActiveQuotaSection(item: AccountWithUsage) {
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "Tokens",
+                            text = stringResource(R.string.tokens),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -193,7 +204,7 @@ private fun ActiveQuotaSection(item: AccountWithUsage) {
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "Requests",
+                            text = stringResource(R.string.requests),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -209,8 +220,8 @@ private fun ActiveQuotaSection(item: AccountWithUsage) {
                     )
                 }
             } else if (subscriberWindows.isNotEmpty()) {
-                val weeklyWindow = subscriberWindows.firstOrNull { it.window == QuotaWindow.WEEKLY || it.label == "Weekly" }
-                val fiveHourWindow = subscriberWindows.firstOrNull { it.window == QuotaWindow.FIVE_HOUR || it.label == "5-hour" }
+                val weeklyWindow = subscriberWindows.firstOrNull { it.window == QuotaWindow.WEEKLY }
+                val fiveHourWindow = subscriberWindows.firstOrNull { it.window == QuotaWindow.FIVE_HOUR }
                 val pacing = usage.weeklyQuotaPacing(account.planType)
 
                 // 1. Weekly window row (Primary)
@@ -225,12 +236,12 @@ private fun ActiveQuotaSection(item: AccountWithUsage) {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Weekly quota",
+                                text = stringResource(R.string.quota_weekly),
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
                                 color = MaterialTheme.colorScheme.primary
                             )
                             Text(
-                                text = "${formatQuotaPercent(weeklyWindow.remainingPercent)} left • ${formatResetCountdown(weeklyWindow.resetAtEpochMs)}",
+                                text = stringResource(R.string.quota_remaining_reset, formatQuotaPercent(weeklyWindow.remainingPercent), formatResetCountdown(context, weeklyWindow.resetAtEpochMs)),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -263,12 +274,12 @@ private fun ActiveQuotaSection(item: AccountWithUsage) {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "5-hour quota",
+                                text = stringResource(R.string.quota_five_hour),
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "${formatQuotaPercent(fiveHourWindow.remainingPercent)} left • ${formatResetCountdown(fiveHourWindow.resetAtEpochMs)}",
+                                text = stringResource(R.string.quota_remaining_reset, formatQuotaPercent(fiveHourWindow.remainingPercent), formatResetCountdown(context, fiveHourWindow.resetAtEpochMs)),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -293,12 +304,12 @@ private fun ActiveQuotaSection(item: AccountWithUsage) {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "${window.label} quota",
+                                text = localizedWindowLabel(context, window.window),
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "${formatQuotaPercent(window.remainingPercent)} left • ${formatResetCountdown(window.resetAtEpochMs)}",
+                                text = stringResource(R.string.quota_remaining_reset, formatQuotaPercent(window.remainingPercent), formatResetCountdown(context, window.resetAtEpochMs)),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -317,12 +328,12 @@ private fun ActiveQuotaSection(item: AccountWithUsage) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "Banked resets",
+                        text = stringResource(R.string.banked_resets),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = "${usage.bankedResets} available",
+                        text = pluralStringResource(R.plurals.count_available, usage.bankedResets, usage.bankedResets),
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -344,22 +355,22 @@ private fun ActiveQuotaSection(item: AccountWithUsage) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         val renewalDateStr = usage?.subscriptionRenewalEpochMs?.let {
-            java.text.SimpleDateFormat("MMM d", java.util.Locale.getDefault()).format(java.util.Date(it))
+            java.text.SimpleDateFormat(context.getString(R.string.date_short_pattern), locale).format(java.util.Date(it))
         }
 
         val footerText = when {
             isApiKey -> {
-                val resetDuration = rateLimitInfo?.resetTokensDuration
-                    ?: rateLimitInfo?.resetRequestsDuration
-                    ?: (if (usage?.resetAtEpochMs != null) "Rolling window" else "Active")
+                val resetDuration = localizedResetDuration(context, rateLimitInfo?.resetTokensDuration
+                    ?: rateLimitInfo?.resetRequestsDuration)
+                    ?: (if (usage?.resetAtEpochMs != null) stringResource(R.string.rolling_window) else stringResource(R.string.status_active))
                 if (renewalDateStr != null) {
-                    "Resets in $resetDuration • Renews $renewalDateStr"
+                    context.getString(R.string.resets_renews, resetDuration, renewalDateStr)
                 } else {
-                    "Resets in: $resetDuration"
+                    context.getString(R.string.resets_in, resetDuration)
                 }
             }
-            renewalDateStr != null -> "Subscription renews $renewalDateStr"
-            else -> "Subscriber quota windows"
+            renewalDateStr != null -> context.getString(R.string.subscription_renews, renewalDateStr)
+            else -> stringResource(R.string.subscriber_quota_windows)
         }
 
         Text(
@@ -396,7 +407,7 @@ private fun SignedOutBanner(
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = "Account Signed Out",
+                text = stringResource(R.string.account_signed_out),
                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                 color = Red500
             )
@@ -405,7 +416,7 @@ private fun SignedOutBanner(
         Spacer(modifier = Modifier.height(4.dp))
 
         Text(
-            text = "Credentials have expired or been revoked. Re-authenticate to resume real-time quota tracking.",
+            text = stringResource(R.string.credentials_have_expired_or_been_revoked_re_authenticate_to_resum),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             lineHeight = 18.sp
@@ -419,7 +430,7 @@ private fun SignedOutBanner(
             shape = RoundedCornerShape(10.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Re-Authenticate Now", fontWeight = FontWeight.Bold, color = Color.White)
+            Text(stringResource(R.string.re_authenticate_now), fontWeight = FontWeight.Bold, color = Color.White)
         }
     }
 }

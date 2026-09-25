@@ -4,7 +4,7 @@ import android.app.Activity
 import android.appwidget.AppWidgetManager
 import android.content.Intent
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -30,13 +30,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
+import com.codex.quota.R
+import com.codex.quota.ui.util.localizedPlanName
 import androidx.lifecycle.lifecycleScope
 import com.codex.quota.CodexQuotaApplication
 import com.codex.quota.domain.model.AccountWithUsage
 import com.codex.quota.ui.theme.CodexQuotaTheme
 import kotlinx.coroutines.launch
 
-class WidgetConfigActivity : ComponentActivity() {
+class WidgetConfigActivity : AppCompatActivity() {
 
     private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
 
@@ -64,7 +68,7 @@ class WidgetConfigActivity : ComponentActivity() {
 
                 Scaffold(
                     topBar = {
-                        TopAppBar(title = { Text("Configure Widget") })
+                        TopAppBar(title = { Text(stringResource(R.string.widget_configure)) })
                     }
                 ) { padding ->
                     Column(
@@ -74,7 +78,7 @@ class WidgetConfigActivity : ComponentActivity() {
                             .padding(16.dp)
                     ) {
                         Text(
-                            text = "Choose an account to display on this widget:",
+                            text = stringResource(R.string.widget_choose_account),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -118,7 +122,7 @@ class WidgetConfigActivity : ComponentActivity() {
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = item.account.planType.displayName,
+                        text = localizedPlanName(LocalContext.current, item.account.planType),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

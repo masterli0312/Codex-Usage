@@ -26,6 +26,11 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
+import com.codex.quota.R
+import kotlin.math.abs
+import kotlin.math.roundToInt
 import com.codex.quota.domain.model.QuotaPacing
 import com.codex.quota.domain.model.QuotaPacingStatus
 import com.codex.quota.ui.theme.Amber500
@@ -43,7 +48,17 @@ fun QuotaPacingBadge(
         QuotaPacingStatus.BEHIND -> Icons.Default.TrendingDown to Amber500
     }
 
-    val accessibilityLabel = "${pacing.statusLabel}: ${pacing.description}"
+    val statusLabel = stringResource(when (pacing.status) {
+        QuotaPacingStatus.AHEAD -> R.string.pacing_ahead
+        QuotaPacingStatus.ON_PACE -> R.string.pacing_on_pace
+        QuotaPacingStatus.BEHIND -> R.string.pacing_behind
+    })
+    val description = when (pacing.status) {
+        QuotaPacingStatus.AHEAD -> pluralStringResource(R.plurals.pacing_more, abs(pacing.deltaPercent).roundToInt(), abs(pacing.deltaPercent).roundToInt())
+        QuotaPacingStatus.ON_PACE -> stringResource(R.string.pacing_matching)
+        QuotaPacingStatus.BEHIND -> pluralStringResource(R.plurals.pacing_less, abs(pacing.deltaPercent).roundToInt(), abs(pacing.deltaPercent).roundToInt())
+    }
+    val accessibilityLabel = "$statusLabel: $description"
 
     Row(
         modifier = modifier
@@ -69,14 +84,14 @@ fun QuotaPacingBadge(
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = pacing.statusLabel,
+                text = statusLabel,
                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = pacing.description,
+                text = description,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 2,

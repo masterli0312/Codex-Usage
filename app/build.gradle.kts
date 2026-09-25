@@ -141,6 +141,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.appcompat)
 
     // Compose BOM & UI
     implementation(platform(libs.androidx.compose.bom))

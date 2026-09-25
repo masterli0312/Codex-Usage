@@ -4,31 +4,33 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
+import com.codex.quota.R
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
 
 @Composable
 fun RelativeTimeText(
     epochMs: Long?,
     modifier: Modifier = Modifier,
-    prefix: String = "Updated ",
     style: TextStyle = MaterialTheme.typography.bodySmall,
     color: Color = MaterialTheme.colorScheme.onSurfaceVariant
 ) {
+    val locale = LocalConfiguration.current.locales[0]
     val text = if (epochMs == null || epochMs <= 0) {
-        "Never synced"
+        stringResource(R.string.never_synced)
     } else {
         val diff = System.currentTimeMillis() - epochMs
         val relative = when {
-            diff < 60_000L -> "just now"
-            diff < 3600_000L -> "${(diff / 60_000L)}m ago"
-            diff < 86400_000L -> "${(diff / 3600_000L)}h ago"
-            else -> SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()).format(Date(epochMs))
+            diff < 60_000L -> stringResource(R.string.just_now)
+            diff < 3600_000L -> stringResource(R.string.relative_minutes_ago, diff / 60_000L)
+            diff < 86400_000L -> stringResource(R.string.relative_hours_ago, diff / 3600_000L)
+            else -> SimpleDateFormat(stringResource(R.string.relative_date_pattern), locale).format(Date(epochMs))
         }
-        "$prefix$relative"
+        stringResource(R.string.relative_updated, relative)
     }
 
     Text(

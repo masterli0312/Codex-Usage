@@ -1,4 +1,6 @@
 package com.codex.quota.ui.feature.about
+import androidx.compose.ui.res.stringResource
+import com.codex.quota.R
 
 import android.content.Intent
 import android.net.Uri
@@ -66,12 +68,12 @@ fun AboutScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text("About Codex Quota", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.about_codex_quota), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.action_back)
                         )
                     }
                 }
@@ -109,12 +111,12 @@ fun AboutScreen(
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "Codex Quota Monitor",
+                        text = stringResource(R.string.codex_quota_monitor),
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "Version ${BuildConfig.VERSION_NAME} (Build ${BuildConfig.VERSION_CODE})",
+                        text = stringResource(R.string.account_version, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -132,15 +134,15 @@ fun AboutScreen(
             ) {
                 Column(modifier = Modifier.padding(18.dp)) {
                     Text(
-                        text = "Open Source & Resources",
+                        text = stringResource(R.string.open_source_resources),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                     )
                     Spacer(modifier = Modifier.height(14.dp))
 
                     LinkRow(
                         icon = Icons.Default.Code,
-                        title = "GitHub Repository",
-                        subtitle = "boudywho/codex-quota-android",
+                        title = stringResource(R.string.github_repository),
+                        subtitle = stringResource(R.string.github_repository),
                         onClick = { openUrl("https://github.com/boudywho/codex-quota-android") }
                     )
 
@@ -151,8 +153,8 @@ fun AboutScreen(
 
                     LinkRow(
                         icon = Icons.Default.NewReleases,
-                        title = "Releases & Changelog",
-                        subtitle = "View version history, updates, and APK downloads",
+                        title = stringResource(R.string.releases_changelog),
+                        subtitle = stringResource(R.string.view_version_history_updates_and_apk_downloads),
                         onClick = { openUrl("https://github.com/boudywho/codex-quota-android/releases") }
                     )
 
@@ -163,8 +165,8 @@ fun AboutScreen(
 
                     LinkRow(
                         icon = Icons.Default.BugReport,
-                        title = "Report Issues & Requests",
-                        subtitle = "Submit bugs or feature suggestions on GitHub",
+                        title = stringResource(R.string.report_issues_requests),
+                        subtitle = stringResource(R.string.submit_bugs_or_feature_suggestions_on_github),
                         onClick = { openUrl("https://github.com/boudywho/codex-quota-android/issues") }
                     )
                 }
@@ -189,13 +191,13 @@ fun AboutScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Privacy & Security Architecture",
+                            text = stringResource(R.string.privacy_security_architecture),
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                         )
                     }
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
-                        text = "• Zero Telemetry: No trackers, third-party analytics, or crash logging.\n• Hardware Encryption: Credentials isolated in Android Keystore AES-256-GCM.\n• Direct HTTPS Communication: App communicates exclusively with OpenAI servers.",
+                        text = stringResource(R.string.zero_telemetry_no_trackers_third_party_analytics_or_crash_logging),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         lineHeight = 20.sp
@@ -214,12 +216,12 @@ fun AboutScreen(
             ) {
                 Column(modifier = Modifier.padding(18.dp)) {
                     Text(
-                        text = "Disclaimer & Attribution",
+                        text = stringResource(R.string.disclaimer_attribution),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Codex Quota is an independent utility designed for developers to monitor rate limits and subscription windows. This application is NOT affiliated with, maintained, authorized, sponsored, or endorsed by OpenAI, Inc.\n\nOpenAI, ChatGPT, and Codex are trademarks of OpenAI, Inc.",
+                        text = stringResource(R.string.codex_quota_is_an_independent_utility_designed_for_developers_to_),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         lineHeight = 20.sp

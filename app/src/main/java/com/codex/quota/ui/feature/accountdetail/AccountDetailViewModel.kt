@@ -1,5 +1,8 @@
 package com.codex.quota.ui.feature.accountdetail
 
+import android.content.Context
+import androidx.core.content.ContextCompat
+import com.codex.quota.R
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.codex.quota.domain.model.AccountWithUsage
@@ -18,6 +21,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class AccountDetailViewModel(
+    context: Context,
     private val accountId: String,
     private val repository: CodexAccountRepository,
     private val preferencesRepository: UserPreferencesRepository,
@@ -25,6 +29,8 @@ class AccountDetailViewModel(
     private val updateAccountUseCase: UpdateAccountUseCase,
     private val removeAccountUseCase: RemoveAccountUseCase
 ) : ViewModel() {
+
+    private val localizedContext = ContextCompat.getContextForLanguage(context)
 
     val accountState: StateFlow<AccountWithUsage?> = repository.observeAccount(accountId)
         .stateIn(
@@ -56,7 +62,7 @@ class AccountDetailViewModel(
             val result = refreshAccountUseCase(accountId)
             _isRefreshing.value = false
             if (result.isFailure) {
-                _uiMessage.value = result.exceptionOrNull()?.message ?: "Failed to refresh account"
+                _uiMessage.value = localizedContext.getString(R.string.error_refresh_account)
             }
         }
     }
@@ -71,9 +77,9 @@ class AccountDetailViewModel(
         viewModelScope.launch {
             val result = updateAccountUseCase(accountId, newNickname, newColorHex, newRenewalDateEpochMs)
             if (result.isSuccess) {
-                _uiMessage.value = "Account updated"
+                _uiMessage.value = localizedContext.getString(R.string.account_updated)
             } else {
-                _uiMessage.value = "Failed to update account"
+                _uiMessage.value = localizedContext.getString(R.string.error_update_account)
             }
         }
     }
@@ -82,9 +88,9 @@ class AccountDetailViewModel(
         viewModelScope.launch {
             val result = updateAccountUseCase.setRenewalDate(accountId, renewalDateEpochMs)
             if (result.isSuccess) {
-                _uiMessage.value = if (renewalDateEpochMs != null) "Renewal date updated" else "Renewal date removed"
+                _uiMessage.value = if (renewalDateEpochMs != null) localizedContext.getString(R.string.renewal_date_updated) else localizedContext.getString(R.string.renewal_date_removed)
             } else {
-                _uiMessage.value = "Failed to update renewal date"
+                _uiMessage.value = localizedContext.getString(R.string.error_update_renewal_date)
             }
         }
     }
@@ -95,9 +101,9 @@ class AccountDetailViewModel(
             val result = repository.reauthenticateAccount(accountId, newApiKey)
             _isRefreshing.value = false
             if (result.isSuccess) {
-                _uiMessage.value = "Account re-authenticated successfully"
+                _uiMessage.value = localizedContext.getString(R.string.account_reauthenticated)
             } else {
-                _uiMessage.value = result.exceptionOrNull()?.message ?: "Re-authentication failed"
+                _uiMessage.value = localizedContext.getString(R.string.error_reauthentication)
             }
         }
     }
@@ -108,7 +114,7 @@ class AccountDetailViewModel(
             if (result.isSuccess) {
                 _accountDeleted.value = true
             } else {
-                _uiMessage.value = "Failed to delete account"
+                _uiMessage.value = localizedContext.getString(R.string.error_delete_account)
             }
         }
     }

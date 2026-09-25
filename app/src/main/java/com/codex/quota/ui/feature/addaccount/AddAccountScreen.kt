@@ -1,4 +1,6 @@
 package com.codex.quota.ui.feature.addaccount
+import androidx.compose.ui.res.stringResource
+import com.codex.quota.R
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -72,6 +74,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.codex.quota.domain.model.PlanType
+import com.codex.quota.ui.util.localizedPlanName
 import com.codex.quota.ui.theme.Emerald500
 import com.codex.quota.ui.theme.Red500
 
@@ -98,19 +101,19 @@ fun AddAccountScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text("Add Account", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.add_account), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.action_back)
                         )
                     }
                 },
                 actions = {
                     if (selectedTab == 0) {
                         IconButton(onClick = { viewModel.initDeviceAuth(forceRefresh = true) }) {
-                            Icon(imageVector = Icons.Default.Refresh, contentDescription = "Generate New Code")
+                            Icon(imageVector = Icons.Default.Refresh, contentDescription = stringResource(R.string.generate_new_code))
                         }
                     }
                 }
@@ -130,17 +133,17 @@ fun AddAccountScreen(
                 Tab(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
-                    text = { Text("ChatGPT Device Code", fontSize = 12.sp, fontWeight = FontWeight.SemiBold) }
+                    text = { Text(stringResource(R.string.chatgpt_device_code), fontSize = 12.sp, fontWeight = FontWeight.SemiBold) }
                 )
                 Tab(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
-                    text = { Text("API Key / Token", fontSize = 12.sp, fontWeight = FontWeight.SemiBold) }
+                    text = { Text(stringResource(R.string.api_key_token), fontSize = 12.sp, fontWeight = FontWeight.SemiBold) }
                 )
                 Tab(
                     selected = selectedTab == 2,
                     onClick = { selectedTab = 2 },
-                    text = { Text("Demo Simulator", fontSize = 12.sp, fontWeight = FontWeight.SemiBold) }
+                    text = { Text(stringResource(R.string.demo_simulator), fontSize = 12.sp, fontWeight = FontWeight.SemiBold) }
                 )
             }
 
@@ -180,7 +183,7 @@ fun AddAccountScreen(
                                     )
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Text(
-                                        text = "ChatGPT Device Code",
+                                        text = stringResource(R.string.chatgpt_device_code),
                                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                                     )
                                 }
@@ -191,7 +194,7 @@ fun AddAccountScreen(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Refresh,
-                                        contentDescription = "Refresh Code",
+                                        contentDescription = stringResource(R.string.refresh_code),
                                         tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(18.dp)
                                     )
@@ -201,7 +204,7 @@ fun AddAccountScreen(
                             Spacer(modifier = Modifier.height(12.dp))
 
                             Text(
-                                text = "Follow these steps to sign in with ChatGPT using device code authorization:",
+                                text = stringResource(R.string.follow_these_steps_to_sign_in_with_chatgpt_using_device_code_auth),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 lineHeight = 20.sp
@@ -211,7 +214,7 @@ fun AddAccountScreen(
 
                             // Step 1: Open link
                             Text(
-                                text = "1. Open this link in your browser and sign in to your account",
+                                text = stringResource(R.string.device_step_open_browser),
                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
                             )
                             Spacer(modifier = Modifier.height(6.dp))
@@ -233,7 +236,7 @@ fun AddAccountScreen(
                                 )
                                 Icon(
                                     imageVector = Icons.Default.OpenInBrowser,
-                                    contentDescription = "Open Link",
+                                    contentDescription = stringResource(R.string.open_link),
                                     tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(20.dp)
                                 )
@@ -246,7 +249,7 @@ fun AddAccountScreen(
                             val userCode = session?.userCode ?: ""
 
                             Text(
-                                text = "2. Enter this one-time code (expires in 15 minutes)",
+                                text = stringResource(R.string.device_step_enter_code),
                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
                             )
                             Spacer(modifier = Modifier.height(6.dp))
@@ -264,7 +267,7 @@ fun AddAccountScreen(
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                                         Spacer(modifier = Modifier.width(10.dp))
-                                        Text("Requesting code from OpenAI...", style = MaterialTheme.typography.bodySmall)
+                                        Text(stringResource(R.string.requesting_code_from_openai), style = MaterialTheme.typography.bodySmall)
                                     }
                                 } else {
                                     Text(
@@ -288,7 +291,7 @@ fun AddAccountScreen(
                                             modifier = Modifier.size(16.dp)
                                         )
                                         Spacer(modifier = Modifier.width(6.dp))
-                                        Text(if (state.deviceCodeCopied) "Copied" else "Copy Code", fontSize = 12.sp)
+                                        Text(if (state.deviceCodeCopied) stringResource(R.string.copied) else stringResource(R.string.copy_code), fontSize = 12.sp)
                                     }
                                 }
                             }
@@ -309,7 +312,7 @@ fun AddAccountScreen(
                                     Spacer(modifier = Modifier.width(8.dp))
                                 }
                                 Text(
-                                    text = state.deviceStatusMessage ?: "Waiting for browser approval...",
+                                    text = state.deviceStatusMessage ?: stringResource(R.string.waiting_for_browser_approval),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -328,7 +331,7 @@ fun AddAccountScreen(
                                 ) {
                                     Icon(imageVector = Icons.Default.OpenInBrowser, contentDescription = null, modifier = Modifier.size(18.dp))
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Open Page")
+                                    Text(stringResource(R.string.open_page))
                                 }
 
                                 Button(
@@ -338,7 +341,7 @@ fun AddAccountScreen(
                                 ) {
                                     Icon(imageVector = Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Text("I Authorized")
+                                    Text(stringResource(R.string.i_authorized))
                                 }
                             }
                         }
@@ -348,8 +351,8 @@ fun AddAccountScreen(
                     OutlinedTextField(
                         value = state.nickname,
                         onValueChange = { viewModel.onNicknameChange(it) },
-                        label = { Text("Account Nickname (Optional)") },
-                        placeholder = { Text("e.g. Personal ChatGPT Plus") },
+                        label = { Text(stringResource(R.string.account_nickname_optional)) },
+                        placeholder = { Text(stringResource(R.string.e_g_personal_chatgpt_plus)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp)
@@ -361,10 +364,10 @@ fun AddAccountScreen(
                         onExpandedChange = { planDropdownExpanded = !planDropdownExpanded }
                     ) {
                         OutlinedTextField(
-                            value = state.planType.displayName,
+                            value = localizedPlanName(context, state.planType),
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text("Subscription Plan") },
+                            label = { Text(stringResource(R.string.subscription_plan)) },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = planDropdownExpanded) },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -377,7 +380,7 @@ fun AddAccountScreen(
                         ) {
                             listOf(PlanType.PLUS, PlanType.TEAM, PlanType.ENTERPRISE).forEach { plan ->
                                 DropdownMenuItem(
-                                    text = { Text(plan.displayName) },
+                                    text = { Text(localizedPlanName(context, plan)) },
                                     onClick = {
                                         viewModel.onPlanTypeChange(plan)
                                         planDropdownExpanded = false
@@ -398,8 +401,8 @@ fun AddAccountScreen(
                     OutlinedTextField(
                         value = state.nickname,
                         onValueChange = { viewModel.onNicknameChange(it) },
-                        label = { Text("Account Nickname") },
-                        placeholder = { Text("e.g. Work API Key / Plus Token") },
+                        label = { Text(stringResource(R.string.account_nickname)) },
+                        placeholder = { Text(stringResource(R.string.e_g_work_api_key_plus_token)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp)
@@ -408,8 +411,8 @@ fun AddAccountScreen(
                     OutlinedTextField(
                         value = state.apiKey,
                         onValueChange = { viewModel.onApiKeyChange(it) },
-                        label = { Text("OpenAI API Key or Session Token") },
-                        placeholder = { Text("sk-... or sess-... or eyJ...") },
+                        label = { Text(stringResource(R.string.openai_api_key_or_session_token)) },
+                        placeholder = { Text(stringResource(R.string.token_format_examples)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
@@ -428,8 +431,8 @@ fun AddAccountScreen(
                     OutlinedTextField(
                         value = state.organizationId,
                         onValueChange = { viewModel.onOrganizationIdChange(it) },
-                        label = { Text("Organization ID (Optional)") },
-                        placeholder = { Text("org-...") },
+                        label = { Text(stringResource(R.string.organization_id_optional)) },
+                        placeholder = { Text(stringResource(R.string.organization_id_example)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp)
@@ -441,10 +444,10 @@ fun AddAccountScreen(
                         onExpandedChange = { planDropdownExpanded = !planDropdownExpanded }
                     ) {
                         OutlinedTextField(
-                            value = state.planType.displayName,
+                            value = localizedPlanName(context, state.planType),
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text("Tier / Plan Type") },
+                            label = { Text(stringResource(R.string.tier_plan_type)) },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = planDropdownExpanded) },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -464,7 +467,7 @@ fun AddAccountScreen(
                                 PlanType.API_TIER_5
                             ).forEach { plan ->
                                 DropdownMenuItem(
-                                    text = { Text(plan.displayName) },
+                                    text = { Text(localizedPlanName(context, plan)) },
                                     onClick = {
                                         viewModel.onPlanTypeChange(plan)
                                         planDropdownExpanded = false
@@ -503,23 +506,23 @@ fun AddAccountScreen(
                                 strokeWidth = 2.dp
                             )
                         } else {
-                            Text("Save Account & Validate", fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.save_account_validate), fontWeight = FontWeight.Bold)
                         }
                     }
                 } else {
                     // Demo Simulator Tab
                     Text(
-                        text = "Instantly add realistic simulation profiles to test gauges, multi-account widgets, and signed-out alert notifications without requiring live OpenAI credentials.",
+                        text = stringResource(R.string.instantly_add_realistic_simulation_profiles_to_test_gauges_multi_),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     listOf(
-                        DemoProfile("Personal Account (Plus)", "78% remaining quota (50 msgs / 3 hrs)", PlanType.PLUS, "#10B981"),
-                        DemoProfile("Work Account (Team)", "31% remaining quota with rolling window", PlanType.TEAM, "#38BDF8"),
-                        DemoProfile("Enterprise Production", "94% remaining high-throughput capacity", PlanType.ENTERPRISE, "#818CF8"),
-                        DemoProfile("Signed-Out Account", "Simulates expired token & triggers notification", PlanType.PLUS, "#EF4444", isExpired = true),
-                        DemoProfile("Rate-Limited Account (429)", "0% remaining quota with countdown reset", PlanType.API_TIER_1, "#F59E0B")
+                        DemoProfile(stringResource(R.string.personal_account_plus), stringResource(R.string.demo_78_percent), PlanType.PLUS, "#10B981"),
+                        DemoProfile(stringResource(R.string.work_account_team), stringResource(R.string.demo_31_percent), PlanType.TEAM, "#38BDF8"),
+                        DemoProfile(stringResource(R.string.enterprise_production), stringResource(R.string.demo_94_percent), PlanType.ENTERPRISE, "#818CF8"),
+                        DemoProfile(stringResource(R.string.signed_out_account), stringResource(R.string.simulates_expired_token_triggers_notification), PlanType.PLUS, "#EF4444", isExpired = true),
+                        DemoProfile(stringResource(R.string.rate_limited_account_429), stringResource(R.string.demo_0_percent), PlanType.API_TIER_1, "#F59E0B")
                     ).forEach { profile ->
                         DemoPresetCard(
                             profile = profile,
@@ -554,7 +557,7 @@ fun AddAccountScreen(
                         )
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = "Used exclusively for reading quota limits. Credentials are encrypted with AES-256-GCM hardware keys.",
+                            text = stringResource(R.string.used_exclusively_for_reading_quota_limits_credentials_are_encrypt),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -632,7 +635,7 @@ private fun ColorPickerRow(
     onColorSelected: (String) -> Unit
 ) {
     Column {
-        Text("Account Accent Color", style = MaterialTheme.typography.labelMedium)
+        Text(stringResource(R.string.account_accent_color), style = MaterialTheme.typography.labelMedium)
         Spacer(modifier = Modifier.height(8.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -652,7 +655,7 @@ private fun ColorPickerRow(
                     if (isSelected) {
                         Icon(
                             imageVector = Icons.Default.Check,
-                            contentDescription = "Selected",
+                            contentDescription = stringResource(R.string.app_selected),
                             tint = Color.White,
                             modifier = Modifier.size(18.dp)
                         )

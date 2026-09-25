@@ -1,6 +1,7 @@
 package com.codex.quota.ui.feature.dashboard
 
 import androidx.lifecycle.ViewModel
+import com.codex.quota.R
 import androidx.lifecycle.viewModelScope
 import com.codex.quota.domain.model.AccountWithUsage
 import com.codex.quota.domain.usecase.ObserveAccountsUseCase
@@ -29,8 +30,8 @@ class DashboardViewModel(
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
-    private val _errorMessage = MutableStateFlow<String?>(null)
-    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+    private val _errorMessage = MutableStateFlow<Int?>(null)
+    val errorMessage: StateFlow<Int?> = _errorMessage.asStateFlow()
 
     val accountsState: StateFlow<List<AccountWithUsage>> = observeAccountsUseCase()
         .stateIn(
@@ -46,7 +47,7 @@ class DashboardViewModel(
             try {
                 val result = refreshAllAccountsUseCase()
                 if (result.isFailure) {
-                    _errorMessage.value = result.exceptionOrNull()?.message ?: "Failed to refresh quotas"
+                    _errorMessage.value = R.string.error_refresh_quotas
                 }
             } finally {
                 _isRefreshing.value = false

@@ -1,6 +1,8 @@
 package com.codex.quota.widget
 
 import android.content.Context
+import androidx.core.content.ContextCompat
+import com.codex.quota.R
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.runtime.Composable
@@ -36,10 +38,13 @@ import androidx.glance.unit.ColorProvider
 import com.codex.quota.CodexQuotaApplication
 import com.codex.quota.domain.model.AccountWithUsage
 import com.codex.quota.domain.model.AuthStatus
+import com.codex.quota.domain.model.QuotaWindow
 import com.codex.quota.domain.model.WidgetThemeMode
 import com.codex.quota.ui.MainActivity
 import com.codex.quota.ui.util.formatQuotaPercent
 import com.codex.quota.ui.util.formatResetCountdown
+import com.codex.quota.ui.util.localizedPlanName
+import com.codex.quota.ui.util.localizedResetDuration
 import com.codex.quota.ui.util.primarySubscriberQuotaWindow
 import kotlinx.coroutines.runBlocking
 
@@ -60,7 +65,7 @@ class MediumQuotaWidget : GlanceAppWidget() {
 
         provideContent {
             GlanceTheme {
-                MediumWidgetContent(context, primaryAccount, themeMode)
+                MediumWidgetContent(ContextCompat.getContextForLanguage(context), primaryAccount, themeMode)
             }
         }
     }
@@ -96,12 +101,12 @@ class MediumQuotaWidget : GlanceAppWidget() {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Codex Quotas",
+                        text = context.getString(R.string.codex_quotas),
                         style = TextStyle(color = colors.textPrimary, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                     )
                     Spacer(modifier = GlanceModifier.height(4.dp))
                     Text(
-                        text = "Tap to add an account",
+                        text = context.getString(R.string.widget_add_account),
                         style = TextStyle(color = colors.accentBlue, fontSize = 12.sp)
                     )
                 }
@@ -112,13 +117,13 @@ class MediumQuotaWidget : GlanceAppWidget() {
                     ?: data.usage?.usedPercent?.toInt()
                     ?: remainingPercent?.let { (100 - it).coerceIn(0, 100) }
                 val status = data.usage?.status ?: data.account.authStatus
-                val resetStr = primaryWindow?.resetAtEpochMs?.let { formatResetCountdown(it) }
-                    ?: data.usage?.rateLimitInfo?.resetRequestsDuration
-                    ?: data.usage?.rateLimitInfo?.resetTokensDuration
-                    ?: "Active"
-                val primaryLabel = primaryWindow?.label ?: "Quota"
-                val secondaryQuotaText = if (data.usage?.fiveHourRemainingPercent != null && primaryWindow?.label == "Weekly") {
-                    "5h ${formatQuotaPercent(data.usage.fiveHourRemainingPercent)}"
+                val resetStr = primaryWindow?.resetAtEpochMs?.let { formatResetCountdown(context, it) }
+                    ?: localizedResetDuration(context, data.usage?.rateLimitInfo?.resetRequestsDuration
+                        ?: data.usage?.rateLimitInfo?.resetTokensDuration)
+                    ?: context.getString(R.string.status_active)
+                val primaryLabel = primaryWindow?.window?.let { context.getString(if (it == com.codex.quota.domain.model.QuotaWindow.WEEKLY) R.string.window_weekly else R.string.window_five_hour) } ?: context.getString(R.string.quota_weekly)
+                val secondaryQuotaText = if (data.usage?.fiveHourRemainingPercent != null && primaryWindow?.window == QuotaWindow.WEEKLY) {
+                    context.getString(R.string.widget_5_hour_percent, formatQuotaPercent(data.usage.fiveHourRemainingPercent))
                 } else {
                     null
                 }
@@ -208,7 +213,7 @@ class MediumQuotaWidget : GlanceAppWidget() {
                                     style = TextStyle(color = colors.textPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                 )
                                 Text(
-                                    text = secondaryQuotaText ?: data.account.planType.displayName,
+                                    text = secondaryQuotaText ?: localizedPlanName(context, data.account.planType),
                                     maxLines = 1,
                                     style = TextStyle(color = colors.textSecondary, fontSize = 11.sp)
                                 )
@@ -218,7 +223,7 @@ class MediumQuotaWidget : GlanceAppWidget() {
 
                             if (status == AuthStatus.AUTHENTICATION_REQUIRED) {
                                 Text(
-                                    text = "Sign In",
+                                    text = context.getString(R.string.action_sign_in),
                                     style = TextStyle(color = colors.error, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                 )
                             } else {
@@ -264,7 +269,7 @@ class MediumQuotaWidget : GlanceAppWidget() {
                         ) {
                             Column(modifier = GlanceModifier.defaultWeight()) {
                                 Text(
-                                    text = if (primaryWindow != null) "${primaryLabel.uppercase()} USED" else "USED",
+                                    text = if (primaryWindow != null) context.getString(R.string.widget_window_used, primaryLabel.uppercase()) else context.getString(R.string.widget_used),
                                     style = TextStyle(color = colors.textMuted, fontSize = 8.sp, fontWeight = FontWeight.Bold)
                                 )
                                 Text(
@@ -275,7 +280,7 @@ class MediumQuotaWidget : GlanceAppWidget() {
 
                             Column(modifier = GlanceModifier.defaultWeight()) {
                                 Text(
-                                    text = if (primaryWindow != null) "${primaryLabel.uppercase()} RESET" else "RESET IN",
+                                    text = if (primaryWindow != null) context.getString(R.string.widget_window_reset, primaryLabel.uppercase()) else context.getString(R.string.widget_reset_in),
                                     style = TextStyle(color = colors.textMuted, fontSize = 8.sp, fontWeight = FontWeight.Bold)
                                 )
                                 Text(
@@ -293,12 +298,12 @@ class MediumQuotaWidget : GlanceAppWidget() {
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "Codex Quotas",
+                                    text = context.getString(R.string.codex_quotas),
                                     style = TextStyle(color = colors.textMuted, fontSize = 10.sp)
                                 )
                                 Spacer(modifier = GlanceModifier.defaultWeight())
                                 Text(
-                                    text = if (data.usage?.isStale == true) "Stale Cache" else "Synced",
+                                    text = if (data.usage?.isStale == true) context.getString(R.string.widget_stale_cache) else context.getString(R.string.widget_synced),
                                     style = TextStyle(
                                         color = if (data.usage?.isStale == true) ColorProvider(Color(0xFFF59E0B)) else colors.textMuted,
                                         fontSize = 10.sp

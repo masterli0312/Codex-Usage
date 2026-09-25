@@ -1,4 +1,7 @@
 package com.codex.quota.ui.feature.accountdetail
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
+import com.codex.quota.R
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -61,6 +64,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -75,6 +79,8 @@ import com.codex.quota.ui.util.formatQuotaPercent
 import com.codex.quota.ui.util.formatQuotaSummary
 import com.codex.quota.ui.util.formatResetCountdown
 import com.codex.quota.ui.util.isApiKeyQuotaUsage
+import com.codex.quota.ui.util.localizedWindowLabel
+import com.codex.quota.ui.util.localizedPlanName
 import com.codex.quota.ui.util.primarySubscriberQuotaWindow
 import com.codex.quota.ui.util.subscriberQuotaWindows
 import com.codex.quota.ui.theme.Amber500
@@ -98,6 +104,7 @@ fun AccountDetailScreen(
     val uiMessage by viewModel.uiMessage.collectAsState()
     val accountDeleted by viewModel.accountDeleted.collectAsState()
     val appLocale = LocalConfiguration.current.locales[0]
+    val context = LocalContext.current
 
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -136,7 +143,7 @@ fun AccountDetailScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = accountWithUsage?.account?.nickname ?: "Account Details",
+                        text = accountWithUsage?.account?.nickname ?: stringResource(R.string.account_details),
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -146,7 +153,7 @@ fun AccountDetailScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.action_back)
                         )
                     }
                 },
@@ -163,7 +170,7 @@ fun AccountDetailScreen(
                         IconButton(onClick = { viewModel.refresh() }) {
                             Icon(
                                 imageVector = Icons.Default.Refresh,
-                                contentDescription = "Refresh usage data",
+                                contentDescription = stringResource(R.string.refresh_usage_data),
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         }
@@ -233,7 +240,7 @@ fun AccountDetailScreen(
                                         )
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Text(
-                                            text = "Track Subscription Renewal",
+                                            text = stringResource(R.string.track_subscription_renewal),
                                             style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                                             color = MaterialTheme.colorScheme.onPrimaryContainer
                                         )
@@ -242,14 +249,14 @@ fun AccountDetailScreen(
                                         onClick = {
                                             viewModel.dismissRenewalBanner()
                                             coroutineScope.launch {
-                                                snackbarHostState.showSnackbar("You can set your renewal date anytime by tapping the ✏️ Edit button.")
+                                                snackbarHostState.showSnackbar(context.getString(R.string.you_can_set_your_renewal_date_anytime_by_tapping_the_edit_button))
                                             }
                                         },
                                         modifier = Modifier.size(24.dp)
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Close,
-                                            contentDescription = "Dismiss",
+                                            contentDescription = stringResource(R.string.dismiss),
                                             tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
                                             modifier = Modifier.size(18.dp)
                                         )
@@ -259,7 +266,7 @@ fun AccountDetailScreen(
                                 Spacer(modifier = Modifier.height(6.dp))
 
                                 Text(
-                                    text = "Set when your subscription renews each month to track days remaining and billing cycles.",
+                                    text = stringResource(R.string.set_when_your_subscription_renews_each_month_to_track_days_remain),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f),
                                     lineHeight = 18.sp
@@ -278,7 +285,7 @@ fun AccountDetailScreen(
                                         modifier = Modifier.size(16.dp)
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Set Renewal Date", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text(stringResource(R.string.set_renewal_date), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
@@ -316,9 +323,9 @@ fun AccountDetailScreen(
                             val resetStr = if (usage.isApiKeyQuotaUsage(account.planType)) {
                                 usage?.rateLimitInfo?.resetRequestsDuration
                                     ?: usage?.rateLimitInfo?.resetTokensDuration
-                                    ?: "Active"
+                                    ?: stringResource(R.string.status_active)
                             } else {
-                                formatResetCountdown(primarySubscriberWindow?.resetAtEpochMs)
+                                formatResetCountdown(context, primarySubscriberWindow?.resetAtEpochMs)
                             }
 
                             Row(
@@ -332,7 +339,7 @@ fun AccountDetailScreen(
                             ) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Text(
-                                        text = if (subscriberWindows.isNotEmpty()) "WEEKLY" else "REMAINING",
+                                        text = if (subscriberWindows.isNotEmpty()) stringResource(R.string.weekly) else stringResource(R.string.remaining),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontWeight = FontWeight.Bold
@@ -354,7 +361,7 @@ fun AccountDetailScreen(
 
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Text(
-                                        text = if (subscriberWindows.isNotEmpty()) "WEEKLY USED" else "USED",
+                                        text = if (subscriberWindows.isNotEmpty()) stringResource(R.string.weekly_used) else stringResource(R.string.used),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontWeight = FontWeight.Bold
@@ -376,7 +383,7 @@ fun AccountDetailScreen(
 
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Text(
-                                        text = if (subscriberWindows.isNotEmpty()) "WEEKLY RESET" else "RESET IN",
+                                        text = if (subscriberWindows.isNotEmpty()) stringResource(R.string.weekly_reset) else stringResource(R.string.reset_in),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontWeight = FontWeight.Bold
@@ -404,12 +411,12 @@ fun AccountDetailScreen(
                                 Spacer(modifier = Modifier.height(12.dp))
                                 subscriberWindows.forEach { window ->
                                     DetailMetricRow(
-                                        label = "${window.label} quota",
-                                        value = formatQuotaSummary(window)
+                                        label = localizedWindowLabel(context, window.window),
+                                        value = formatQuotaSummary(context, window)
                                     )
                                     DetailMetricRow(
-                                        label = "${window.label} reset",
-                                        value = formatResetCountdown(window.resetAtEpochMs)
+                                        label = stringResource(R.string.window_reset, localizedWindowLabel(context, window.window)),
+                                        value = formatResetCountdown(context, window.resetAtEpochMs)
                                     )
                                 }
                             }
@@ -418,21 +425,21 @@ fun AccountDetailScreen(
                                 val expiry = usage.bankedResetExpiresAtEpochMs
                                     ?.takeIf { usage.bankedResets > 0 }
                                     ?.let { epochMs ->
-                                        SimpleDateFormat("HH:mm 'on' dd MMM yyyy", appLocale)
+                                        SimpleDateFormat(stringResource(R.string.date_time_pattern), appLocale)
                                             .apply { timeZone = TimeZone.getDefault() }
                                             .format(Date(epochMs))
                                     }
                                 val expiryPrefix = if (usage.bankedResets > 1) {
-                                    "Next expiry"
+                                    stringResource(R.string.next_expiry)
                                 } else {
-                                    "Expires"
+                                    stringResource(R.string.expires)
                                 }
                                 Spacer(modifier = Modifier.height(12.dp))
                                 DetailMetricRow(
-                                    label = "Banked usage resets",
+                                    label = stringResource(R.string.banked_usage_resets),
                                     value = buildString {
-                                        append("${usage.bankedResets} available")
-                                        if (expiry != null) append("\n$expiryPrefix $expiry")
+                                        append(context.resources.getQuantityString(R.plurals.count_available, usage.bankedResets, usage.bankedResets))
+                                        if (expiry != null) append("\n" + context.getString(R.string.expiry_line, expiryPrefix, expiry))
                                     }
                                 )
                             }
@@ -458,7 +465,7 @@ fun AccountDetailScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = "Subscription & Renewal",
+                                        text = stringResource(R.string.subscription_renewal),
                                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                                     )
                                     IconButton(
@@ -467,7 +474,7 @@ fun AccountDetailScreen(
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Edit,
-                                            contentDescription = "Edit Renewal Date",
+                                            contentDescription = stringResource(R.string.edit_renewal_date),
                                             tint = MaterialTheme.colorScheme.primary,
                                             modifier = Modifier.size(18.dp)
                                         )
@@ -476,27 +483,31 @@ fun AccountDetailScreen(
 
                                 Spacer(modifier = Modifier.height(10.dp))
 
-                                val renewalDate = SimpleDateFormat("MMMM d, yyyy", Locale.getDefault())
+                                val renewalDate = SimpleDateFormat(stringResource(R.string.date_long_pattern), appLocale)
                                     .format(Date(effectiveRenewalEpochMs))
 
                                 val daysLeft = ((effectiveRenewalEpochMs - System.currentTimeMillis()) / (1000L * 60 * 60 * 24)).coerceAtLeast(0)
 
                                 DetailMetricRow(
-                                    label = "Plan Type",
-                                    value = "${account.planType.displayName} (${usage?.billingPeriod ?: "Monthly"})"
+                                    label = stringResource(R.string.plan_type),
+                                    value = "${localizedPlanName(context, account.planType)} (${when (usage?.billingPeriod?.lowercase()) {
+                                        "monthly" -> stringResource(R.string.billing_monthly)
+                                        "yearly", "annual" -> stringResource(R.string.billing_yearly)
+                                        else -> usage?.billingPeriod ?: stringResource(R.string.billing_monthly)
+                                    }})"
                                 )
 
                                 DetailMetricRow(
-                                    label = "Renewal / Expiration Date",
-                                    value = "$renewalDate (in $daysLeft days)"
+                                    label = stringResource(R.string.renewal_expiration_date),
+                                    value = pluralStringResource(R.plurals.renewal_in_days, daysLeft.toInt(), renewalDate, daysLeft)
                                 )
 
                                 DetailMetricRow(
-                                    label = "Auto-Renewal Status",
+                                    label = stringResource(R.string.auto_renewal_status),
                                     value = if (usage?.willAutoRenew == false) {
-                                        "Manual renewal / Cancels at period end"
+                                        stringResource(R.string.manual_renewal_cancels_at_period_end)
                                     } else {
-                                        "Active Subscription (Will auto-renew on next cycle)"
+                                        stringResource(R.string.active_subscription_will_auto_renew_on_next_cycle)
                                     }
                                 )
                             }
@@ -517,30 +528,30 @@ fun AccountDetailScreen(
                     ) {
                         Column(modifier = Modifier.padding(18.dp)) {
                             Text(
-                                text = "Rate Limit Dimensions",
+                                text = stringResource(R.string.rate_limit_dimensions),
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                             )
                             Spacer(modifier = Modifier.height(12.dp))
 
-                            val numberFormat = NumberFormat.getNumberInstance(Locale.getDefault())
+                            val numberFormat = NumberFormat.getNumberInstance(appLocale)
 
                             DetailMetricRow(
-                                label = "Requests Per Minute (RPM)",
+                                label = stringResource(R.string.requests_per_minute_rpm),
                                 value = if (rateLimits?.limitRequests != null && rateLimits.remainingRequests != null) {
                                     "${numberFormat.format(rateLimits.remainingRequests)} / ${numberFormat.format(rateLimits.limitRequests)}"
-                                } else "Available / Standard"
+                                } else stringResource(R.string.available_standard)
                             )
 
                             DetailMetricRow(
-                                label = "Tokens Per Minute (TPM)",
+                                label = stringResource(R.string.tokens_per_minute_tpm),
                                 value = if (rateLimits?.limitTokens != null && rateLimits.remainingTokens != null) {
                                     "${numberFormat.format(rateLimits.remainingTokens)} / ${numberFormat.format(rateLimits.limitTokens)}"
-                                } else "Available / Standard"
+                                } else stringResource(R.string.available_standard)
                             )
 
                             if (usage?.remainingCredits != null) {
                                 DetailMetricRow(
-                                    label = "Remaining Balance / Credits",
+                                    label = stringResource(R.string.remaining_balance_credits),
                                     value = "$${String.format(Locale.US, "%.2f", usage.remainingCredits)}"
                                 )
                             }
@@ -565,31 +576,31 @@ fun AccountDetailScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "Account Details",
+                                    text = stringResource(R.string.account_details),
                                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                                 )
                                 IconButton(onClick = { showEditDialog = true }) {
-                                    Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit Account")
+                                    Icon(imageVector = Icons.Default.Edit, contentDescription = stringResource(R.string.edit_account))
                                 }
                             }
 
                             Spacer(modifier = Modifier.height(4.dp))
-                            DetailMetricRow(label = "Nickname", value = account.nickname)
+                            DetailMetricRow(label = stringResource(R.string.nickname), value = account.nickname)
                             if (account.email != null) {
-                                DetailMetricRow(label = "Email Address", value = account.email)
+                                DetailMetricRow(label = stringResource(R.string.email_address), value = account.email)
                             }
                             if (account.organizationId != null) {
-                                DetailMetricRow(label = "Organization ID", value = account.organizationId)
+                                DetailMetricRow(label = stringResource(R.string.organization_id), value = account.organizationId)
                             }
                             if (usage?.accountCreatedEpochMs != null) {
                                 DetailMetricRow(
-                                    label = "OpenAI Account Created",
-                                    value = SimpleDateFormat("MMMM d, yyyy", Locale.getDefault()).format(Date(usage.accountCreatedEpochMs))
+                                    label = stringResource(R.string.openai_account_created),
+                                    value = SimpleDateFormat(stringResource(R.string.date_long_pattern), appLocale).format(Date(usage.accountCreatedEpochMs))
                                 )
                             }
                             DetailMetricRow(
-                                label = "Key Encryption & Storage",
-                                value = "Hardware-backed Android Keystore (AES-256-GCM)"
+                                label = stringResource(R.string.key_encryption_storage),
+                                value = stringResource(R.string.hardware_backed_android_keystore_aes_256_gcm)
                             )
                         }
                     }
@@ -607,7 +618,7 @@ fun AccountDetailScreen(
                     ) {
                         Column(modifier = Modifier.padding(18.dp)) {
                             Text(
-                                text = "Sync Status",
+                                text = stringResource(R.string.sync_status),
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                             )
                             Spacer(modifier = Modifier.height(10.dp))
@@ -616,14 +627,14 @@ fun AccountDetailScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("Last Successful Sync", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(stringResource(R.string.last_successful_sync), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 RelativeTimeText(epochMs = account.lastSuccessfulSyncEpochMs)
                             }
 
                             if (usage?.errorMessage != null) {
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    text = "Diagnostic: ${usage.errorMessage}",
+                                    text = stringResource(R.string.diagnostic_message, usage.errorMessage),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = if (status == AuthStatus.AUTHENTICATION_REQUIRED) Red500 else Amber500
                                 )
@@ -647,7 +658,7 @@ fun AccountDetailScreen(
                         ) {
                             Icon(imageVector = Icons.Default.Key, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Re-Authenticate Credentials")
+                            Text(stringResource(R.string.re_authenticate_credentials))
                         }
 
                         OutlinedButton(
@@ -658,7 +669,7 @@ fun AccountDetailScreen(
                         ) {
                             Icon(imageVector = Icons.Default.Delete, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Remove Account")
+                            Text(stringResource(R.string.remove_account))
                         }
                     }
                 }
@@ -686,7 +697,7 @@ fun AccountDetailScreen(
                                 showDatePickerDialog = false
                             }
                         ) {
-                            Text("Save Date")
+                            Text(stringResource(R.string.save_date))
                         }
                     },
                     dismissButton = {
@@ -698,11 +709,11 @@ fun AccountDetailScreen(
                                         showDatePickerDialog = false
                                     }
                                 ) {
-                                    Text("Clear", color = Red500)
+                                    Text(stringResource(R.string.clear), color = Red500)
                                 }
                             }
                             TextButton(onClick = { showDatePickerDialog = false }) {
-                                Text("Cancel")
+                                Text(stringResource(R.string.action_cancel))
                             }
                         }
                     }
@@ -744,8 +755,8 @@ fun AccountDetailScreen(
             if (showDeleteDialog) {
                 AlertDialog(
                     onDismissRequest = { showDeleteDialog = false },
-                    title = { Text("Remove Account?") },
-                    text = { Text("This will remove '${account.nickname}' and securely delete its stored API keys from this device.") },
+                    title = { Text(stringResource(R.string.remove_account_confirm_title)) },
+                    text = { Text(stringResource(R.string.remove_account_message, account.nickname)) },
                     confirmButton = {
                         Button(
                             onClick = {
@@ -754,12 +765,12 @@ fun AccountDetailScreen(
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = Red500)
                         ) {
-                            Text("Remove", color = Color.White)
+                            Text(stringResource(R.string.remove), color = Color.White)
                         }
                     },
                     dismissButton = {
                         TextButton(onClick = { showDeleteDialog = false }) {
-                            Text("Cancel")
+                            Text(stringResource(R.string.action_cancel))
                         }
                     }
                 )
@@ -812,18 +823,18 @@ private fun EditAccountDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Edit Account") },
+        title = { Text(stringResource(R.string.edit_account)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 OutlinedTextField(
                     value = nickname,
                     onValueChange = { nickname = it },
-                    label = { Text("Nickname") },
+                    label = { Text(stringResource(R.string.nickname)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Text("Theme Color", style = MaterialTheme.typography.labelMedium)
+                Text(stringResource(R.string.theme_color), style = MaterialTheme.typography.labelMedium)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -859,17 +870,17 @@ private fun EditAccountDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Subscription Renewal", style = MaterialTheme.typography.labelMedium)
+                        Text(stringResource(R.string.subscription_renewal_label), style = MaterialTheme.typography.labelMedium)
                         Text(
                             text = if (currentRenewalEpochMs != null) {
-                                SimpleDateFormat("MMMM d, yyyy", Locale.getDefault()).format(Date(currentRenewalEpochMs))
-                            } else "Not set",
+                                SimpleDateFormat(stringResource(R.string.date_long_pattern), LocalConfiguration.current.locales[0]).format(Date(currentRenewalEpochMs))
+                            } else stringResource(R.string.not_set),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     TextButton(onClick = onOpenDatePicker) {
-                        Text(if (currentRenewalEpochMs != null) "Change" else "Set Date")
+                        Text(if (currentRenewalEpochMs != null) stringResource(R.string.change) else stringResource(R.string.set_date))
                     }
                 }
             }
@@ -879,11 +890,11 @@ private fun EditAccountDialog(
                 onClick = { if (nickname.isNotBlank()) onConfirm(nickname.trim(), selectedColor) },
                 enabled = nickname.isNotBlank()
             ) {
-                Text("Save Changes")
+                Text(stringResource(R.string.save_changes))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         }
     )
 }
@@ -897,11 +908,11 @@ private fun ReauthDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Re-Authenticate Credentials") },
+        title = { Text(stringResource(R.string.re_authenticate_credentials)) },
         text = {
             Column {
                 Text(
-                    text = "Enter a fresh OpenAI API key (sk-...) or Session JWT token for this account.",
+                    text = stringResource(R.string.enter_a_fresh_openai_api_key_sk_or_session_jwt_token_for_this_acc),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -909,8 +920,8 @@ private fun ReauthDialog(
                 OutlinedTextField(
                     value = keyInput,
                     onValueChange = { keyInput = it },
-                    label = { Text("API Key or Token") },
-                    placeholder = { Text("sk-...") },
+                    label = { Text(stringResource(R.string.api_key_or_token)) },
+                    placeholder = { Text(stringResource(R.string.api_key_example)) },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -920,11 +931,11 @@ private fun ReauthDialog(
                 onClick = { if (keyInput.isNotBlank()) onConfirm(keyInput.trim()) },
                 enabled = keyInput.isNotBlank()
             ) {
-                Text("Update Key")
+                Text(stringResource(R.string.update_key))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         }
     )
 }

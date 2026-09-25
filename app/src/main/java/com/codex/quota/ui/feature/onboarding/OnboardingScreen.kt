@@ -1,4 +1,6 @@
 package com.codex.quota.ui.feature.onboarding
+import androidx.compose.ui.res.stringResource
+import com.codex.quota.R
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -53,18 +55,18 @@ fun OnboardingScreen(
 
     val pages = listOf(
         OnboardingPage(
-            title = "Know your Codex usage at a glance",
-            description = "Track rolling message quotas, token consumption, and reset windows effortlessly.",
+            title = stringResource(R.string.know_your_codex_usage_at_a_glance),
+            description = stringResource(R.string.track_rolling_message_quotas_token_consumption_and_reset_windows_),
             icon = Icons.Default.Speed
         ),
         OnboardingPage(
-            title = "All your accounts together",
-            description = "Seamlessly switch between personal Plus, work Team, and enterprise OpenAI accounts in one secure place.",
+            title = stringResource(R.string.all_your_accounts_together),
+            description = stringResource(R.string.seamlessly_switch_between_personal_plus_work_team_and_enterprise_),
             icon = Icons.Default.Group
         ),
         OnboardingPage(
-            title = "Right on your home screen",
-            description = "Glance widgets keep your remaining quota visible at all times with automatic background synchronization.",
+            title = stringResource(R.string.right_on_your_home_screen),
+            description = stringResource(R.string.glance_widgets_keep_your_remaining_quota_visible_at_all_times_wit),
             icon = Icons.Default.Dashboard
         )
     )
@@ -106,13 +108,13 @@ fun OnboardingScreen(
                 ) {
                     if (currentPage < pages.lastIndex) {
                         TextButton(onClick = onComplete) {
-                            Text("Skip", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(stringResource(R.string.skip), color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Button(
                             onClick = { currentPage++ },
                             shape = RoundedCornerShape(12.dp)
                         ) {
-                            Text("Next")
+                            Text(stringResource(R.string.onboarding_next))
                         }
                     } else {
                         Button(
@@ -120,7 +122,7 @@ fun OnboardingScreen(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp)
                         ) {
-                            Text("Get Started", fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.get_started), fontWeight = FontWeight.Bold)
                         }
                     }
                 }

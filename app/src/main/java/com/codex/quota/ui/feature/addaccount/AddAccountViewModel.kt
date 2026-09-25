@@ -2,6 +2,8 @@ package com.codex.quota.ui.feature.addaccount
 
 import android.content.Context
 import android.net.Uri
+import androidx.core.content.ContextCompat
+import com.codex.quota.R
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.codex.quota.auth.DeviceCodeManager
@@ -13,6 +15,7 @@ import com.codex.quota.auth.OAuthTokenResult
 import com.codex.quota.domain.model.CodexAccount
 import com.codex.quota.domain.model.PlanType
 import com.codex.quota.domain.usecase.AddAccountUseCase
+import com.codex.quota.ui.util.localizedPlanName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,8 +46,11 @@ data class AddAccountUiState(
 )
 
 class AddAccountViewModel(
+    context: Context,
     private val addAccountUseCase: AddAccountUseCase
 ) : ViewModel() {
+
+    private val localizedContext = ContextCompat.getContextForLanguage(context)
 
     private val _uiState = MutableStateFlow(AddAccountUiState())
     val uiState: StateFlow<AddAccountUiState> = _uiState.asStateFlow()
@@ -84,7 +90,7 @@ class AddAccountViewModel(
                     email = decoded.email ?: state.email,
                     planType = decoded.planType,
                     nickname = if (state.nickname.isBlank() && decoded.email != null) {
-                        "ChatGPT ${decoded.planType.displayName}"
+                        localizedPlanName(localizedContext, decoded.planType)
                     } else state.nickname
                 )
             }
@@ -118,7 +124,7 @@ class AddAccountViewModel(
                     it.copy(
                         isRequestingDeviceCode = false,
                         deviceSession = session,
-                        deviceStatusMessage = "Waiting for authorization in browser..."
+                        deviceStatusMessage = localizedContext.getString(R.string.device_waiting_authorization)
                     )
                 }
                 startDevicePolling(session)
@@ -126,7 +132,7 @@ class AddAccountViewModel(
                 _uiState.update {
                     it.copy(
                         isRequestingDeviceCode = false,
-                        errorMessage = "Could not connect to OpenAI device auth. Please try again."
+                        errorMessage = localizedContext.getString(R.string.device_connection_error)
                     )
                 }
             }
@@ -135,7 +141,7 @@ class AddAccountViewModel(
 
     fun copyDeviceCode(context: Context) {
         val session = _uiState.value.deviceSession ?: return
-        DeviceCodeManager.copyToClipboard(context, session.userCode, "ChatGPT Device Code")
+        DeviceCodeManager.copyToClipboard(context, session.userCode, localizedContext.getString(R.string.device_clipboard_label))
         _uiState.update { it.copy(deviceCodeCopied = true) }
     }
 
@@ -162,7 +168,7 @@ class AddAccountViewModel(
                         _uiState.update {
                             it.copy(
                                 isPollingDeviceCode = false,
-                                deviceStatusMessage = "Device code expired. Tap refresh to generate a new code."
+                                deviceStatusMessage = localizedContext.getString(R.string.device_code_expired)
                             )
                         }
                         return@launch
@@ -171,7 +177,7 @@ class AddAccountViewModel(
                         _uiState.update {
                             it.copy(
                                 isPollingDeviceCode = false,
-                                deviceStatusMessage = pollResult.message
+                                deviceStatusMessage = localizedContext.getString(R.string.error_device_authorization)
                             )
                         }
                         return@launch
@@ -181,7 +187,7 @@ class AddAccountViewModel(
                     }
                     is DevicePollResult.Pending -> {
                         _uiState.update {
-                            it.copy(deviceStatusMessage = "Waiting for browser approval...")
+                            it.copy(deviceStatusMessage = localizedContext.getString(R.string.device_waiting_approval))
                         }
                     }
                 }
@@ -202,7 +208,7 @@ class AddAccountViewModel(
                 val defaultNickname = if (_uiState.value.nickname.isNotBlank()) {
                     _uiState.value.nickname
                 } else {
-                    "ChatGPT Plus Account"
+                    localizedContext.getString(R.string.default_plus_account)
                 }
 
                 val addResult = addAccountUseCase(
@@ -227,7 +233,7 @@ class AddAccountViewModel(
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = addResult.exceptionOrNull()?.message ?: "Failed to save account"
+                            errorMessage = localizedContext.getString(R.string.error_save_account)
                         )
                     }
                 }
@@ -240,11 +246,11 @@ class AddAccountViewModel(
         val defaultNickname = if (_uiState.value.nickname.isNotBlank()) {
             _uiState.value.nickname
         } else if (decoded?.name != null && decoded.name.isNotBlank()) {
-            "${decoded.planType.displayName} (${decoded.name})"
+            "${localizedPlanName(localizedContext, decoded.planType)} (${decoded.name})"
         } else if (decoded?.email != null) {
-            "${decoded.planType.displayName} (${decoded.email.substringBefore('@')})"
+            "${localizedPlanName(localizedContext, decoded.planType)} (${decoded.email.substringBefore('@')})"
         } else {
-            decoded?.planType?.displayName ?: "ChatGPT Plus"
+            localizedPlanName(localizedContext, decoded?.planType ?: PlanType.PLUS)
         }
 
         val addResult = addAccountUseCase(
@@ -269,7 +275,7 @@ class AddAccountViewModel(
             _uiState.update {
                 it.copy(
                     isLoading = false,
-                    errorMessage = addResult.exceptionOrNull()?.message ?: "Failed to save account"
+                            errorMessage = localizedContext.getString(R.string.error_save_account)
                 )
             }
         }
@@ -282,8 +288,7 @@ class AddAccountViewModel(
     fun handleOAuthCallbackUri(uri: Uri) {
         val code = uri.getQueryParameter("code")
         if (code.isNullOrBlank()) {
-            val error = uri.getQueryParameter("error_description") ?: "OAuth sign in was cancelled or failed"
-            _uiState.update { it.copy(errorMessage = error) }
+            _uiState.update { it.copy(errorMessage = localizedContext.getString(R.string.error_oauth_cancelled)) }
             return
         }
 
@@ -294,7 +299,7 @@ class AddAccountViewModel(
                 saveTokenAccount(exchangeResult.getOrThrow())
             } else {
                 _uiState.update {
-                    it.copy(isLoading = false, errorMessage = "OAuth token exchange failed")
+                    it.copy(isLoading = false, errorMessage = localizedContext.getString(R.string.error_oauth_exchange))
                 }
             }
         }
@@ -306,12 +311,12 @@ class AddAccountViewModel(
         val apiKey = state.apiKey.trim()
 
         if (nickname.isBlank()) {
-            _uiState.update { it.copy(errorMessage = "Please enter an account nickname") }
+            _uiState.update { it.copy(errorMessage = localizedContext.getString(R.string.error_nickname_required)) }
             return
         }
 
         if (!isDemo && apiKey.isBlank()) {
-            _uiState.update { it.copy(errorMessage = "Please enter your OpenAI API key or OAuth Token") }
+            _uiState.update { it.copy(errorMessage = localizedContext.getString(R.string.error_key_required)) }
             return
         }
 
@@ -340,7 +345,7 @@ class AddAccountViewModel(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        errorMessage = result.exceptionOrNull()?.message ?: "Failed to add account"
+                        errorMessage = localizedContext.getString(R.string.error_add_account)
                     )
                 }
             }

@@ -1,6 +1,8 @@
 package com.codex.quota.widget
 
 import android.content.Context
+import androidx.core.content.ContextCompat
+import com.codex.quota.R
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.runtime.Composable
@@ -36,6 +38,7 @@ import androidx.glance.unit.ColorProvider
 import com.codex.quota.CodexQuotaApplication
 import com.codex.quota.domain.model.AccountWithUsage
 import com.codex.quota.domain.model.AuthStatus
+import com.codex.quota.domain.model.QuotaWindow
 import com.codex.quota.domain.model.WidgetThemeMode
 import com.codex.quota.ui.MainActivity
 import com.codex.quota.ui.util.formatQuotaPercent
@@ -59,7 +62,7 @@ class SmallQuotaWidget : GlanceAppWidget() {
 
         provideContent {
             GlanceTheme {
-                SmallWidgetContent(context, primaryAccount, themeMode)
+                SmallWidgetContent(ContextCompat.getContextForLanguage(context), primaryAccount, themeMode)
             }
         }
     }
@@ -95,12 +98,12 @@ class SmallQuotaWidget : GlanceAppWidget() {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Codex Quota",
+                        text = context.getString(R.string.app_name),
                         style = TextStyle(color = colors.textPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     )
                     Spacer(modifier = GlanceModifier.height(4.dp))
                     Text(
-                        text = "Tap to setup",
+                        text = context.getString(R.string.widget_setup),
                         style = TextStyle(color = colors.accent, fontSize = 11.sp)
                     )
                 }
@@ -108,12 +111,12 @@ class SmallQuotaWidget : GlanceAppWidget() {
                 val primaryWindow = data.usage.primarySubscriberQuotaWindow()
                 val remainingPercent = primaryWindow?.remainingPercent?.toInt() ?: data.usage?.remainingPercent?.toInt()
                 val status = data.usage?.status ?: data.account.authStatus
-                val resetStr = primaryWindow?.resetAtEpochMs?.let { formatResetCountdown(it) }
+                val resetStr = primaryWindow?.resetAtEpochMs?.let { formatResetCountdown(context, it) }
                     ?: data.usage?.rateLimitInfo?.resetRequestsDuration
                     ?: data.usage?.rateLimitInfo?.resetTokensDuration
-                    ?: "Active"
-                val subtitle = if (primaryWindow?.label == "Weekly") "weekly left" else "quota left"
-                val fiveHourLine = data.usage?.fiveHourRemainingPercent?.let { "5h ${formatQuotaPercent(it)}" }
+                    ?: context.getString(R.string.status_active)
+                val subtitle = if (primaryWindow?.window == QuotaWindow.WEEKLY) context.getString(R.string.widget_weekly_left) else context.getString(R.string.widget_quota_left)
+                val fiveHourLine = data.usage?.fiveHourRemainingPercent?.let { context.getString(R.string.widget_5_hour_percent, formatQuotaPercent(it)) }
 
                 val dotColor = try {
                     Color(android.graphics.Color.parseColor(data.account.colorHex))
@@ -149,7 +152,7 @@ class SmallQuotaWidget : GlanceAppWidget() {
 
                     if (status == AuthStatus.AUTHENTICATION_REQUIRED) {
                         Text(
-                            text = "Signed Out",
+                            text = context.getString(R.string.widget_signed_out),
                             style = TextStyle(color = colors.error, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                         )
                     } else {
@@ -170,7 +173,7 @@ class SmallQuotaWidget : GlanceAppWidget() {
                     if (height > 90.dp) {
                         Spacer(modifier = GlanceModifier.height(4.dp))
                         Text(
-                            text = fiveHourLine?.let { "$it • W reset: $resetStr" } ?: "Reset: $resetStr",
+                            text = fiveHourLine?.let { context.getString(R.string.widget_weekly_reset, it, resetStr) } ?: context.getString(R.string.widget_reset, resetStr),
                             maxLines = 1,
                             style = TextStyle(color = colors.textMuted, fontSize = 9.sp)
                         )

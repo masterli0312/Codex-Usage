@@ -1,4 +1,7 @@
 package com.codex.quota.ui.components
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
+import com.codex.quota.R
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -51,9 +54,9 @@ fun CircularQuotaGauge(
     val trackColor = MaterialTheme.colorScheme.surfaceVariant
 
     val description = if (remainingPercent != null) {
-        "${remainingPercent.toInt()} percent quota remaining"
+        pluralStringResource(R.plurals.percent_remaining_accessibility, remainingPercent.toInt(), remainingPercent.toInt())
     } else {
-        "Quota unknown"
+        stringResource(R.string.quota_unknown)
     }
 
     Box(
@@ -99,7 +102,7 @@ fun CircularQuotaGauge(
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "left",
+                text = stringResource(R.string.remaining_label),
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontSize = (size.value * 0.11).sp
                 ),

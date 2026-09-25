@@ -9,11 +9,15 @@ import android.net.Uri
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import com.codex.quota.R
 import com.codex.quota.domain.model.CodexAccount
 import com.codex.quota.ui.MainActivity
+import com.codex.quota.ui.util.localizedPlanName
 
 class SignedOutNotificationManager(private val context: Context) {
+
+    private val localizedContext = ContextCompat.getContextForLanguage(context)
 
     private val notificationManager = NotificationManagerCompat.from(context)
 
@@ -25,10 +29,10 @@ class SignedOutNotificationManager(private val context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                context.getString(R.string.channel_auth_name),
+                localizedContext.getString(R.string.channel_auth_name),
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = context.getString(R.string.channel_auth_description)
+                description = localizedContext.getString(R.string.channel_auth_description)
                 enableVibration(true)
             }
             val systemManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -51,18 +55,18 @@ class SignedOutNotificationManager(private val context: Context) {
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("Codex account signed out")
-            .setContentText("${account.nickname} needs you to sign in again.")
+            .setContentTitle(localizedContext.getString(R.string.auth_notification_title))
+            .setContentText(localizedContext.getString(R.string.auth_notification_text, account.nickname))
             .setStyle(
                 NotificationCompat.BigTextStyle()
-                    .bigText("${account.nickname} (${account.planType.displayName}) credentials have expired or were revoked. Tap to re-authenticate.")
+                    .bigText(localizedContext.getString(R.string.auth_notification_details, account.nickname, localizedPlanName(localizedContext, account.planType)))
             )
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
             .addAction(
                 R.drawable.ic_launcher_foreground,
-                "Sign In",
+                localizedContext.getString(R.string.action_sign_in),
                 pendingIntent
             )
             .build()

@@ -1,4 +1,6 @@
 package com.codex.quota.ui.components
+import androidx.compose.ui.res.stringResource
+import com.codex.quota.R
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -31,12 +33,12 @@ fun StatusBadge(
     modifier: Modifier = Modifier
 ) {
     val (dotColor, textColor, text) = when (status) {
-        AuthStatus.AUTHENTICATED -> Triple(Emerald500, Emerald500, "Active")
-        AuthStatus.REFRESHING -> Triple(Blue500, Blue500, "Syncing…")
-        AuthStatus.OFFLINE -> Triple(Color.Gray, Color.Gray, "Offline")
-        AuthStatus.TEMPORARY_ERROR -> Triple(Amber500, Amber500, "Rate Limited / Error")
-        AuthStatus.AUTHENTICATION_REQUIRED -> Triple(Red500, Red500, "Sign-In Required")
-        AuthStatus.UNKNOWN -> Triple(Color.Gray, Color.Gray, "Unknown")
+        AuthStatus.AUTHENTICATED -> Triple(Emerald500, Emerald500, stringResource(R.string.status_active))
+        AuthStatus.REFRESHING -> Triple(Blue500, Blue500, stringResource(R.string.status_syncing))
+        AuthStatus.OFFLINE -> Triple(Color.Gray, Color.Gray, stringResource(R.string.offline))
+        AuthStatus.TEMPORARY_ERROR -> Triple(Amber500, Amber500, stringResource(R.string.rate_limited_error))
+        AuthStatus.AUTHENTICATION_REQUIRED -> Triple(Red500, Red500, stringResource(R.string.sign_in_required))
+        AuthStatus.UNKNOWN -> Triple(Color.Gray, Color.Gray, stringResource(R.string.unknown))
     }
 
     Row(

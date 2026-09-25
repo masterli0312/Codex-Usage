@@ -1,4 +1,7 @@
 package com.codex.quota.ui.feature.dashboard
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
+import com.codex.quota.R
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -40,6 +43,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -63,10 +67,11 @@ fun DashboardScreen(
     val isRefreshing by viewModel.isRefreshing.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
-            snackbarHostState.showSnackbar(it)
+            snackbarHostState.showSnackbar(context.getString(it))
             viewModel.clearError()
         }
     }
@@ -93,7 +98,7 @@ fun DashboardScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = "Codex Quotas",
+                            text = stringResource(R.string.codex_quotas),
                             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                         )
                     }
@@ -111,7 +116,7 @@ fun DashboardScreen(
                         IconButton(onClick = { viewModel.refreshAll() }) {
                             Icon(
                                 imageVector = Icons.Default.Refresh,
-                                contentDescription = "Refresh all accounts",
+                                contentDescription = stringResource(R.string.refresh_all_accounts),
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         }
@@ -129,7 +134,7 @@ fun DashboardScreen(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 ) {
-                    Icon(imageVector = Icons.Default.Add, contentDescription = "Add Account")
+                    Icon(imageVector = Icons.Default.Add, contentDescription = stringResource(R.string.add_account))
                 }
             }
         }
@@ -198,13 +203,13 @@ private fun OverviewSummaryCard(accounts: List<AccountWithUsage>) {
         ) {
             Column {
                 Text(
-                    text = "Monitored Accounts",
+                    text = stringResource(R.string.monitored_accounts),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "$activeAccounts of ${accounts.size} Active",
+                    text = pluralStringResource(R.plurals.active_accounts_summary, activeAccounts, activeAccounts, accounts.size),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -212,7 +217,7 @@ private fun OverviewSummaryCard(accounts: List<AccountWithUsage>) {
 
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = "Avg Remaining",
+                    text = stringResource(R.string.avg_remaining),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -259,7 +264,7 @@ private fun EmptyDashboardView(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "No Codex Accounts Yet",
+                    text = stringResource(R.string.no_codex_accounts_yet),
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                     textAlign = TextAlign.Center
                 )
@@ -267,7 +272,7 @@ private fun EmptyDashboardView(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Add your personal, work, or team accounts to monitor token usage, rate limits, and quota resets at a glance.",
+                    text = stringResource(R.string.add_your_personal_work_or_team_accounts_to_monitor_token_usage_ra),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -282,18 +287,19 @@ private fun EmptyDashboardView(
                 ) {
                     Icon(imageVector = Icons.Default.Add, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Add First Account", fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.add_first_account), fontWeight = FontWeight.SemiBold)
                 }
             }
         }
     }
 }
 
+@Composable
 private fun getGreeting(): String {
     return when (Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) {
-        in 5..11 -> "Good morning"
-        in 12..16 -> "Good afternoon"
-        in 17..21 -> "Good evening"
-        else -> "Good night"
+        in 5..11 -> stringResource(R.string.good_morning)
+        in 12..16 -> stringResource(R.string.good_afternoon)
+        in 17..21 -> stringResource(R.string.good_evening)
+        else -> stringResource(R.string.good_night)
     }
 }

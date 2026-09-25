@@ -1,5 +1,7 @@
 package com.codex.quota
 
+import android.content.Context
+import com.codex.quota.R
 import com.codex.quota.domain.model.QuotaWindow
 import com.codex.quota.domain.usecase.evaluateQuotaAlertDecision
 import com.codex.quota.notifications.buildQuotaAlertBigText
@@ -9,6 +11,9 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import io.mockk.every
+import io.mockk.mockk
+import java.util.Locale
 
 class QuotaAlertEvaluatorTest {
 
@@ -113,20 +118,22 @@ class QuotaAlertEvaluatorTest {
 
     @Test
     fun pureNotificationHelpers_weeklyWindow_formatsAppropriateText() {
-        val title = buildQuotaAlertTitle(QuotaWindow.WEEKLY, isApiKey = false)
-        val content = buildQuotaAlertContentText("Personal Plus", 10, QuotaWindow.WEEKLY, isApiKey = false)
-        val bigText = buildQuotaAlertBigText("Personal Plus", "ChatGPT Plus", 10, 10, QuotaWindow.WEEKLY, isApiKey = false)
+        val context = notificationContext()
+        val title = buildQuotaAlertTitle(context, QuotaWindow.WEEKLY, isApiKey = false)
+        val content = buildQuotaAlertContentText(context, "Personal Plus", 10, QuotaWindow.WEEKLY, isApiKey = false)
+        val bigText = buildQuotaAlertBigText(context, "Personal Plus", "ChatGPT Plus", 10, 10, QuotaWindow.WEEKLY, isApiKey = false)
 
         assertEquals("Low Weekly Quota Alert", title)
-        assertTrue(content.contains("Personal Plus has only 10% weekly quota remaining."))
-        assertTrue(bigText.contains("Personal Plus (ChatGPT Plus) is below the 10% threshold at 10% remaining in the weekly window."))
+        assertTrue(content.contains("Personal Plus has only 10% Weekly quota remaining."))
+        assertTrue(bigText.contains("Personal Plus (ChatGPT Plus) is below the 10% threshold at 10% remaining in the Weekly window."))
     }
 
     @Test
     fun pureNotificationHelpers_fiveHourWindow_formatsAppropriateText() {
-        val title = buildQuotaAlertTitle(QuotaWindow.FIVE_HOUR, isApiKey = false)
-        val content = buildQuotaAlertContentText("Team Account", 5, QuotaWindow.FIVE_HOUR, isApiKey = false)
-        val bigText = buildQuotaAlertBigText("Team Account", "ChatGPT Team", 5, 5, QuotaWindow.FIVE_HOUR, isApiKey = false)
+        val context = notificationContext()
+        val title = buildQuotaAlertTitle(context, QuotaWindow.FIVE_HOUR, isApiKey = false)
+        val content = buildQuotaAlertContentText(context, "Team Account", 5, QuotaWindow.FIVE_HOUR, isApiKey = false)
+        val bigText = buildQuotaAlertBigText(context, "Team Account", "ChatGPT Team", 5, 5, QuotaWindow.FIVE_HOUR, isApiKey = false)
 
         assertEquals("Low 5-hour Quota Alert", title)
         assertTrue(content.contains("Team Account has only 5% 5-hour quota remaining."))
@@ -135,9 +142,10 @@ class QuotaAlertEvaluatorTest {
 
     @Test
     fun pureNotificationHelpers_apiKeyAccount_formatsGenericTextWithoutWeeklyClaims() {
-        val title = buildQuotaAlertTitle(window = null, isApiKey = true)
-        val content = buildQuotaAlertContentText("Production API", 15, window = null, isApiKey = true)
-        val bigText = buildQuotaAlertBigText("Production API", "OpenAI Tier 1", 25, 15, window = null, isApiKey = true)
+        val context = notificationContext()
+        val title = buildQuotaAlertTitle(context, window = null, isApiKey = true)
+        val content = buildQuotaAlertContentText(context, "Production API", 15, window = null, isApiKey = true)
+        val bigText = buildQuotaAlertBigText(context, "Production API", "OpenAI Tier 1", 25, 15, window = null, isApiKey = true)
 
         assertEquals("Low Quota Alert", title)
         assertEquals("Production API has only 15% quota remaining.", content)
@@ -147,5 +155,30 @@ class QuotaAlertEvaluatorTest {
         assertFalse(content.lowercase().contains("weekly"))
         assertFalse(bigText.lowercase().contains("weekly"))
         assertFalse(bigText.lowercase().contains("window"))
+    }
+
+    private fun notificationContext(): Context = mockk {
+        every { getString(any()) } answers {
+            when (firstArg<Int>()) {
+                R.string.window_weekly -> "Weekly"
+                R.string.window_five_hour -> "5-hour"
+                R.string.quota_notification_title -> "Low Quota Alert"
+                else -> error("Unexpected unformatted string resource")
+            }
+        }
+        every { getString(any(), *anyVararg()) } answers {
+            val resourceId = firstArg<Int>()
+            val args = secondArg<Array<out Any?>>()
+            val template = when (resourceId) {
+                R.string.quota_notification_title -> "Low Quota Alert"
+                R.string.quota_notification_window_title -> "Low %1\$s Quota Alert"
+                R.string.quota_notification_text -> "%1\$s has only %2\$d%% quota remaining."
+                R.string.quota_notification_window_text -> "%1\$s has only %2\$d%% %3\$s quota remaining."
+                R.string.quota_notification_details -> "%1\$s (%2\$s) is below the %3\$d%% threshold at %4\$d%% remaining."
+                R.string.quota_notification_window_details -> "%1\$s (%2\$s) is below the %3\$d%% threshold at %4\$d%% remaining in the %5\$s window."
+                else -> error("Unexpected formatted string resource")
+            }
+            String.format(Locale.US, template, *args)
+        }
     }
 }

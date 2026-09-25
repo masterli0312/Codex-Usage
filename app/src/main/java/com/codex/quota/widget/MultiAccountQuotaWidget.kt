@@ -1,6 +1,8 @@
 package com.codex.quota.widget
 
 import android.content.Context
+import androidx.core.content.ContextCompat
+import com.codex.quota.R
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.runtime.Composable
@@ -36,6 +38,7 @@ import androidx.glance.unit.ColorProvider
 import com.codex.quota.CodexQuotaApplication
 import com.codex.quota.domain.model.AccountWithUsage
 import com.codex.quota.domain.model.AuthStatus
+import com.codex.quota.domain.model.QuotaWindow
 import com.codex.quota.domain.model.WidgetThemeMode
 import com.codex.quota.ui.MainActivity
 import com.codex.quota.ui.util.formatQuotaPercent
@@ -57,7 +60,7 @@ class MultiAccountQuotaWidget : GlanceAppWidget() {
 
         provideContent {
             GlanceTheme {
-                MultiWidgetContent(context, accounts, themeMode)
+                MultiWidgetContent(ContextCompat.getContextForLanguage(context), accounts, themeMode)
             }
         }
     }
@@ -85,12 +88,12 @@ class MultiAccountQuotaWidget : GlanceAppWidget() {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Codex Quotas",
+                        text = context.getString(R.string.codex_quotas),
                         style = TextStyle(color = colors.textPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     )
                     Spacer(modifier = GlanceModifier.height(4.dp))
                     Text(
-                        text = "Tap to add accounts",
+                        text = context.getString(R.string.widget_add_accounts),
                         style = TextStyle(color = colors.accentBlue, fontSize = 12.sp)
                     )
                 }
@@ -103,12 +106,12 @@ class MultiAccountQuotaWidget : GlanceAppWidget() {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Codex Quotas",
+                            text = context.getString(R.string.codex_quotas),
                             style = TextStyle(color = colors.textPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                         )
                         Spacer(modifier = GlanceModifier.defaultWeight())
                         Text(
-                            text = "${accounts.size} Active",
+                            text = context.getString(R.string.widget_active_count, accounts.size),
                             style = TextStyle(color = colors.accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         )
                     }
@@ -141,10 +144,10 @@ class MultiAccountQuotaWidget : GlanceAppWidget() {
         val remainingPercent = primaryWindow?.remainingPercent?.toInt() ?: item.usage?.remainingPercent?.toInt()
         val isSignedOut = item.usage?.status == AuthStatus.AUTHENTICATION_REQUIRED ||
                 item.account.authStatus == AuthStatus.AUTHENTICATION_REQUIRED
-        val quotaText = if (item.usage?.fiveHourRemainingPercent != null && primaryWindow?.label == "Weekly") {
-            "W ${formatQuotaPercent(primaryWindow.remainingPercent)} • 5h ${formatQuotaPercent(item.usage.fiveHourRemainingPercent)}"
+        val quotaText = if (item.usage?.fiveHourRemainingPercent != null && primaryWindow?.window == QuotaWindow.WEEKLY) {
+            context.getString(R.string.widget_two_quotas, formatQuotaPercent(primaryWindow.remainingPercent), formatQuotaPercent(item.usage.fiveHourRemainingPercent))
         } else if (primaryWindow != null) {
-            "${primaryWindow.label} ${formatQuotaPercent(primaryWindow.remainingPercent)}"
+            context.getString(R.string.widget_label_percent, context.getString(if (primaryWindow.window == com.codex.quota.domain.model.QuotaWindow.WEEKLY) R.string.window_weekly else R.string.window_five_hour), formatQuotaPercent(primaryWindow.remainingPercent))
         } else if (remainingPercent != null) {
             "$remainingPercent%"
         } else {
@@ -185,7 +188,7 @@ class MultiAccountQuotaWidget : GlanceAppWidget() {
 
             if (isSignedOut) {
                 Text(
-                    text = "Sign In",
+                    text = context.getString(R.string.action_sign_in),
                     style = TextStyle(color = colors.error, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 )
             } else {

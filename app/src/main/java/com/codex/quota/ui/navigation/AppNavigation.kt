@@ -1,4 +1,6 @@
 package com.codex.quota.ui.navigation
+import androidx.compose.ui.res.stringResource
+import com.codex.quota.R
 
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -79,7 +81,7 @@ fun AppNavigation(
                             }
                         },
                         icon = { Icon(Icons.Default.Dashboard, contentDescription = null) },
-                        label = { Text("Dashboard") }
+                        label = { Text(stringResource(R.string.dashboard_title)) }
                     )
                     NavigationBarItem(
                         selected = currentRoute == Screen.Settings.route,
@@ -93,7 +95,7 @@ fun AppNavigation(
                             }
                         },
                         icon = { Icon(Icons.Default.Settings, contentDescription = null) },
-                        label = { Text("Settings") }
+                        label = { Text(stringResource(R.string.settings_title)) }
                     )
                 }
             }
@@ -154,6 +156,7 @@ fun AppNavigation(
                 val accountId = backStackEntry.arguments?.getString("accountId").orEmpty()
                 val detailViewModel: AccountDetailViewModel = scopedViewModel(key = accountId) {
                     AccountDetailViewModel(
+                        context = app,
                         accountId = accountId,
                         repository = app.repository,
                         preferencesRepository = app.preferencesRepository,
@@ -177,6 +180,7 @@ fun AppNavigation(
             ) {
                 val addAccountViewModel: AddAccountViewModel = scopedViewModel {
                     AddAccountViewModel(
+                        context = app,
                         addAccountUseCase = AddAccountUseCase(app.repository)
                     )
                 }
