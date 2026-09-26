@@ -56,6 +56,7 @@ class AddAccountViewModel(
     val uiState: StateFlow<AddAccountUiState> = _uiState.asStateFlow()
 
     private var pollingJob: Job? = null
+    private var deviceRequestJob: Job? = null
 
     val availableColors = listOf(
         "#10B981", // Emerald
@@ -115,8 +116,9 @@ class AddAccountViewModel(
         if (!forceRefresh && _uiState.value.deviceSession != null) return
 
         pollingJob?.cancel()
-        viewModelScope.launch {
-            _uiState.update { it.copy(isRequestingDeviceCode = true, deviceCodeCopied = false, errorMessage = null) }
+        deviceRequestJob?.cancel()
+        deviceRequestJob = viewModelScope.launch {
+            _uiState.update { it.copy(isRequestingDeviceCode = true, deviceSession = null, deviceStatusMessage = null, deviceCodeCopied = false, errorMessage = null) }
             val result = DeviceCodeManager.requestDeviceCode()
             if (result.isSuccess) {
                 val session = result.getOrThrow()
@@ -132,6 +134,7 @@ class AddAccountViewModel(
                 _uiState.update {
                     it.copy(
                         isRequestingDeviceCode = false,
+                        deviceStatusMessage = localizedContext.getString(R.string.device_connection_error),
                         errorMessage = localizedContext.getString(R.string.device_connection_error)
                     )
                 }
@@ -197,44 +200,30 @@ class AddAccountViewModel(
 
     fun completeDeviceAuthManually() {
         val session = _uiState.value.deviceSession ?: return
+        if (_uiState.value.isLoading || _uiState.value.isSuccess) return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             val pollResult = DeviceCodeManager.pollDeviceToken(session)
-            if (pollResult is DevicePollResult.Success) {
-                saveTokenAccount(pollResult.tokenResult)
-            } else {
-                // If user confirmed browser sign-in on auth.openai.com/codex/device, save as ChatGPT Plus/Team account
-                val token = "sess_${session.deviceAuthId}"
-                val defaultNickname = if (_uiState.value.nickname.isNotBlank()) {
-                    _uiState.value.nickname
-                } else {
-                    localizedContext.getString(R.string.default_plus_account)
+            when (pollResult) {
+                is DevicePollResult.Success -> {
+                    pollingJob?.cancel()
+                    saveTokenAccount(pollResult.tokenResult)
                 }
-
-                val addResult = addAccountUseCase(
-                    nickname = defaultNickname,
-                    email = _uiState.value.email.ifBlank { null },
-                    apiKey = token,
-                    planType = _uiState.value.planType,
-                    organizationId = _uiState.value.organizationId.ifBlank { null },
-                    colorHex = _uiState.value.selectedColorHex,
-                    isDemoAccount = false
-                )
-
-                if (addResult.isSuccess) {
+                is DevicePollResult.Pending, is DevicePollResult.SlowDown -> {
                     _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            isSuccess = true,
-                            createdAccount = addResult.getOrThrow()
-                        )
+                        it.copy(isLoading = false, deviceStatusMessage = localizedContext.getString(R.string.device_waiting_approval))
                     }
-                } else {
+                }
+                is DevicePollResult.Expired -> {
+                    pollingJob?.cancel()
                     _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = localizedContext.getString(R.string.error_save_account)
-                        )
+                        it.copy(isLoading = false, isPollingDeviceCode = false, deviceStatusMessage = localizedContext.getString(R.string.device_code_expired))
+                    }
+                }
+                is DevicePollResult.Error -> {
+                    pollingJob?.cancel()
+                    _uiState.update {
+                        it.copy(isLoading = false, isPollingDeviceCode = false, deviceStatusMessage = localizedContext.getString(R.string.error_device_authorization))
                     }
                 }
             }

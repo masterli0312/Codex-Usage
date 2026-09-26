@@ -10,9 +10,20 @@ data class ChatGptWhamUsageDto(
     @SerialName("email") val email: String? = null,
     @SerialName("plan_type") val planType: String? = null,
     @SerialName("rate_limit") val rateLimit: ChatGptRateLimitDto? = null,
+    @SerialName("additional_rate_limits") val additionalRateLimits: List<ChatGptAdditionalRateLimitDto>? = null,
     @SerialName("credits") val credits: ChatGptCreditsDto? = null,
     @SerialName("rate_limit_reset_credits")
     val rateLimitResetCredits: ChatGptRateLimitResetCreditsDto? = null
+)
+
+@Serializable
+data class ChatGptAdditionalRateLimitDto(
+    @SerialName("limit_id") val limitId: String? = null,
+    @SerialName("limit_name") val limitName: String? = null,
+    @SerialName("metered_feature") val meteredFeature: String? = null,
+    @SerialName("rate_limit") val rateLimit: ChatGptRateLimitDto? = null,
+    @SerialName("primary_window") val primaryWindow: ChatGptWindowDto? = null,
+    @SerialName("secondary_window") val secondaryWindow: ChatGptWindowDto? = null
 )
 
 @Serializable

@@ -263,12 +263,18 @@ fun AddAccountScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                if (state.isRequestingDeviceCode || userCode.isBlank()) {
+                                if (state.isRequestingDeviceCode) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                                         Spacer(modifier = Modifier.width(10.dp))
                                         Text(stringResource(R.string.requesting_code_from_openai), style = MaterialTheme.typography.bodySmall)
                                     }
+                                } else if (userCode.isBlank()) {
+                                    Text(
+                                        text = state.deviceStatusMessage ?: stringResource(R.string.device_connection_error),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.error
+                                    )
                                 } else {
                                     Text(
                                         text = userCode,
@@ -327,7 +333,8 @@ fun AddAccountScreen(
                                 OutlinedButton(
                                     onClick = { viewModel.openDeviceAuthUrl(context) },
                                     modifier = Modifier.weight(1f),
-                                    shape = RoundedCornerShape(12.dp)
+                                    shape = RoundedCornerShape(12.dp),
+                                    enabled = session != null
                                 ) {
                                     Icon(imageVector = Icons.Default.OpenInBrowser, contentDescription = null, modifier = Modifier.size(18.dp))
                                     Spacer(modifier = Modifier.width(6.dp))
@@ -337,7 +344,8 @@ fun AddAccountScreen(
                                 Button(
                                     onClick = { viewModel.completeDeviceAuthManually() },
                                     modifier = Modifier.weight(1f),
-                                    shape = RoundedCornerShape(12.dp)
+                                    shape = RoundedCornerShape(12.dp),
+                                    enabled = session != null && !state.isLoading
                                 ) {
                                     Icon(imageVector = Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                                     Spacer(modifier = Modifier.width(6.dp))

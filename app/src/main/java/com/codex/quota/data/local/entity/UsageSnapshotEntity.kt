@@ -48,7 +48,9 @@ data class UsageSnapshotEntity(
     val hasActiveSubscription: Boolean?,
     val fiveHourRemainingPercent: Double?,
     val fiveHourUsedPercent: Double?,
-    val fiveHourResetAtEpochMs: Long?
+    val fiveHourResetAtEpochMs: Long?,
+    val gptReserveRemainingPercent: Double?,
+    val gptReserveResetAtEpochMs: Long?
 ) {
     fun toDomain(): CodexUsage {
         val rateLimitInfo = if (limitRequests != null || limitTokens != null) {
@@ -90,7 +92,9 @@ data class UsageSnapshotEntity(
             hasActiveSubscription = hasActiveSubscription,
             fiveHourRemainingPercent = fiveHourRemainingPercent,
             fiveHourUsedPercent = fiveHourUsedPercent,
-            fiveHourResetAtEpochMs = fiveHourResetAtEpochMs
+            fiveHourResetAtEpochMs = fiveHourResetAtEpochMs,
+            gptReserveRemainingPercent = gptReserveRemainingPercent,
+            gptReserveResetAtEpochMs = gptReserveResetAtEpochMs
         )
     }
 
@@ -123,7 +127,9 @@ data class UsageSnapshotEntity(
                 hasActiveSubscription = usage.hasActiveSubscription,
                 fiveHourRemainingPercent = usage.fiveHourRemainingPercent,
                 fiveHourUsedPercent = usage.fiveHourUsedPercent,
-                fiveHourResetAtEpochMs = usage.fiveHourResetAtEpochMs
+                fiveHourResetAtEpochMs = usage.fiveHourResetAtEpochMs,
+                gptReserveRemainingPercent = usage.gptReserveRemainingPercent,
+                gptReserveResetAtEpochMs = usage.gptReserveResetAtEpochMs
             )
         }
     }

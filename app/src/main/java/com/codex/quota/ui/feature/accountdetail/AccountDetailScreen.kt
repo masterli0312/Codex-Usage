@@ -60,7 +60,7 @@ fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () ->
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         ValueColumn(stringResource(R.string.quota_weekly), formatQuotaPercent(usage?.remainingPercent))
                         ValueColumn(stringResource(R.string.quota_five_hour), formatQuotaPercent(usage?.fiveHourRemainingPercent))
-                        ValueColumn(stringResource(R.string.gpt_reserve), stringResource(R.string.value_unavailable))
+                        ValueColumn(stringResource(R.string.gpt_reserve), formatQuotaPercent(usage?.gptReserveRemainingPercent))
                     }
                 }
             }
@@ -124,7 +124,7 @@ fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () ->
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     LabelValue(stringResource(R.string.quota_weekly), formatQuotaPercent(outcome.freshUsage?.remainingPercent))
                     LabelValue(stringResource(R.string.quota_five_hour), formatQuotaPercent(outcome.freshUsage?.fiveHourRemainingPercent))
-                    LabelValue(stringResource(R.string.gpt_reserve), stringResource(R.string.reset_reserve_unaffected))
+                    LabelValue(stringResource(R.string.gpt_reserve), formatQuotaPercent(outcome.freshUsage?.gptReserveRemainingPercent))
                     LabelValue(stringResource(R.string.reset_remaining), outcome.freshUsage?.bankedResets?.toString() ?: stringResource(R.string.value_unavailable))
                     Text(stringResource(if (outcome.freshUsage == null) R.string.reset_success_refresh_failed else R.string.reset_success_refresh_note))
                 }

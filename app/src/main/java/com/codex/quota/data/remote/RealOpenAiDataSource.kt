@@ -98,6 +98,25 @@ class RealOpenAiDataSource(
                     val fiveHourRemainingPercent = fiveHourUsedPercent?.let { (100.0 - it).coerceIn(0.0, 100.0) }
                     val fiveHourResetAtEpochMs = fiveHourWindow?.resetAt?.let { it * 1000L }
 
+                    // Codex-Meter reads named extra quotas from additional_rate_limits.
+                    // Only a real gpt-reserve weekly window may populate this UI value.
+                    val reserveWeeklyWindow = whamDto.additionalRateLimits.orEmpty().asSequence()
+                        .filter { limit ->
+                            listOfNotNull(limit.limitId, limit.limitName, limit.meteredFeature).any { value ->
+                                value.trim().lowercase().replace('_', '-').replace(' ', '-') == "gpt-reserve"
+                            }
+                        }
+                        .flatMap { limit ->
+                            listOfNotNull(
+                                limit.rateLimit?.primaryWindow ?: limit.primaryWindow,
+                                limit.rateLimit?.secondaryWindow ?: limit.secondaryWindow
+                            ).asSequence()
+                        }
+                        .firstOrNull { it.limitWindowSeconds in 432_000L..777_600L }
+                    val gptReserveRemainingPercent = reserveWeeklyWindow?.usedPercent
+                        ?.let { (100.0 - it).coerceIn(0.0, 100.0) }
+                    val gptReserveResetAtEpochMs = reserveWeeklyWindow?.resetAt?.let { it * 1000L }
+
                     val isLimitReached = rateLimit?.limitReached == true || listOfNotNull(weeklyWindow, fiveHourWindow)
                         .any { window -> window.usedPercent?.let { it >= 100.0 } == true }
                     val status = AuthStatus.AUTHENTICATED
@@ -160,7 +179,9 @@ class RealOpenAiDataSource(
                         bankedResetExpiresAtEpochMs = bankedResetExpiresAtEpochMs,
                         fiveHourRemainingPercent = fiveHourRemainingPercent,
                         fiveHourUsedPercent = fiveHourUsedPercent,
-                        fiveHourResetAtEpochMs = fiveHourResetAtEpochMs
+                        fiveHourResetAtEpochMs = fiveHourResetAtEpochMs,
+                        gptReserveRemainingPercent = gptReserveRemainingPercent,
+                        gptReserveResetAtEpochMs = gptReserveResetAtEpochMs
                     )
                     return Result.success(usage)
                 }
@@ -189,16 +210,16 @@ class RealOpenAiDataSource(
                         return Result.success(usage)
                     }
 
-                    // Fallback to active subscription window if transient HTTP error
+                    // An HTTP error does not imply an unused quota.
                     val usage = CodexUsage(
                         accountId = account.id,
-                        remainingPercent = 100.0,
-                        usedPercent = 0.0,
+                        remainingPercent = null,
+                        usedPercent = null,
                         usedTokens = null,
                         totalLimitTokens = null,
                         remainingCredits = null,
-                        resetAtEpochMs = decoded.expiresAtEpochMs,
-                        status = AuthStatus.AUTHENTICATED,
+                        resetAtEpochMs = null,
+                        status = AuthStatus.TEMPORARY_ERROR,
                         fetchedAtEpochMs = now,
                         rateLimitInfo = null,
                         errorMessage = whamResponse.message,

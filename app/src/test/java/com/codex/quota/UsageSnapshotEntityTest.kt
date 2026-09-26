@@ -40,7 +40,9 @@ class UsageSnapshotEntityTest {
             bankedResetExpiresAtEpochMs = 1_795_123_868_943L,
             fiveHourRemainingPercent = 44.0,
             fiveHourUsedPercent = 56.0,
-            fiveHourResetAtEpochMs = 4_000L
+            fiveHourResetAtEpochMs = 4_000L,
+            gptReserveRemainingPercent = 75.0,
+            gptReserveResetAtEpochMs = 5_000L
         )
 
         assertEquals(usage, UsageSnapshotEntity.fromDomain(usage).toDomain())

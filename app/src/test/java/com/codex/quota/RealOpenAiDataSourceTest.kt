@@ -6,6 +6,7 @@ import com.codex.quota.data.remote.ApiResponse
 import com.codex.quota.data.remote.OpenAiUsageService
 import com.codex.quota.data.remote.RealOpenAiDataSource
 import com.codex.quota.data.remote.dto.ChatGptAccountCheckData
+import com.codex.quota.data.remote.dto.ChatGptAdditionalRateLimitDto
 import com.codex.quota.data.remote.dto.ChatGptRateLimitDto
 import com.codex.quota.data.remote.dto.ChatGptRateLimitResetCreditsDto
 import com.codex.quota.data.remote.dto.ChatGptResetCreditDto
@@ -38,7 +39,7 @@ class RealOpenAiDataSourceTest {
     private val ignoreUnknownKeysJson = Json { ignoreUnknownKeys = true }
 
     @Test
-    fun subscriberRequests_runConcurrentlyAndPreserveApiMetadataFallbacks() = runTest {
+    fun subscriberRequests_runConcurrentlyAndPreserveApiMetadataOnUsageFailure() = runTest {
         val jwtRenewal = 9_000_000_000_000L
         val apiRenewal = 8_000_000_000_000L
         mockkObject(JwtTokenParser)
@@ -66,7 +67,8 @@ class RealOpenAiDataSourceTest {
             api.releaseResponses.complete(Unit)
 
             val usage = fetch.await().getOrThrow()
-            assertEquals(AuthStatus.AUTHENTICATED, usage.status)
+            assertEquals(AuthStatus.TEMPORARY_ERROR, usage.status)
+            assertEquals(null, usage.remainingPercent)
             assertEquals(apiRenewal, usage.subscriptionRenewalEpochMs)
             assertEquals(1_000L, usage.subscriptionStartedAtEpochMs)
             assertEquals("Annual", usage.billingPeriod)
@@ -242,6 +244,59 @@ class RealOpenAiDataSourceTest {
         )
 
         assertEquals(1, dto.rateLimitResetCredits?.availableCount)
+    }
+
+    @Test
+    fun subscriberUsage_readsOnlyGptReserveWeeklyAdditionalLimit() = runTest {
+        val usage = withSubscriberToken {
+            val api = GatedSubscriberApi(
+                apiRenewal = 8_000_000_000_000L,
+                whamUsage = ChatGptWhamUsageDto(
+                    additionalRateLimits = listOf(
+                        ChatGptAdditionalRateLimitDto(
+                            limitName = "GPT-5.3-Codex-Spark",
+                            rateLimit = ChatGptRateLimitDto(secondaryWindow = quotaWindow(90.0, 604_800L, 2_000_000L))
+                        ),
+                        ChatGptAdditionalRateLimitDto(
+                            limitName = "gpt-reserve",
+                            rateLimit = ChatGptRateLimitDto(
+                                primaryWindow = quotaWindow(40.0, 18_000L, 1_000_000L),
+                                secondaryWindow = quotaWindow(25.0, 604_800L, 3_000_000L)
+                            )
+                        )
+                    )
+                )
+            )
+            api.releaseResponses.complete(Unit)
+            RealOpenAiDataSource(api).fetchUsage(account(), "subscriber.jwt.token").getOrThrow()
+        }
+
+        assertEquals(75.0, usage.gptReserveRemainingPercent!!, 0.01)
+        assertEquals(3_000_000_000L, usage.gptReserveResetAtEpochMs)
+        assertEquals(null, usage.remainingPercent)
+    }
+
+    @Test
+    fun subscriberHttpFailureDoesNotInventFullQuota() = runTest {
+        val usage = withSubscriberToken {
+            val api = GatedSubscriberApi(apiRenewal = 8_000_000_000_000L)
+            api.releaseResponses.complete(Unit)
+            RealOpenAiDataSource(api).fetchUsage(account(), "subscriber.jwt.token").getOrThrow()
+        }
+
+        assertEquals(AuthStatus.TEMPORARY_ERROR, usage.status)
+        assertEquals(null, usage.remainingPercent)
+        assertEquals(null, usage.gptReserveRemainingPercent)
+    }
+
+    @Test
+    fun whamDto_decodesAdditionalRateLimitFromApiShape() {
+        val dto = ignoreUnknownKeysJson.decodeFromString<ChatGptWhamUsageDto>(
+            """{"additional_rate_limits":[{"limit_name":"gpt-reserve","metered_feature":"gpt-reserve","rate_limit":{"primary_window":{"used_percent":25,"limit_window_seconds":604800,"reset_at":3000000}}}]}"""
+        )
+
+        assertEquals("gpt-reserve", dto.additionalRateLimits!!.single().limitName)
+        assertEquals(25.0, dto.additionalRateLimits!!.single().rateLimit?.primaryWindow?.usedPercent)
     }
 
     @Test

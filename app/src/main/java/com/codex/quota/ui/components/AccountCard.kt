@@ -48,7 +48,7 @@ fun AccountCard(item: AccountWithUsage, onClick: () -> Unit, onSignInClick: () -
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                         QuotaLine(stringResource(R.string.quota_weekly), usage?.remainingPercent)
                         QuotaLine(stringResource(R.string.quota_five_hour), usage?.fiveHourRemainingPercent)
-                        QuotaLine(stringResource(R.string.gpt_reserve), null)
+                        QuotaLine(stringResource(R.string.gpt_reserve), usage?.gptReserveRemainingPercent)
                     }
                 }
                 HorizontalDivider()
