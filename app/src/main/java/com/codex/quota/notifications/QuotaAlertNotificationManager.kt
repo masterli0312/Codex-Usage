@@ -83,6 +83,7 @@ fun buildQuotaAlertBigText(
 private fun notificationWindowName(context: Context, window: QuotaWindow): String = when (window) {
     QuotaWindow.WEEKLY -> context.getString(R.string.window_weekly)
     QuotaWindow.FIVE_HOUR -> context.getString(R.string.window_five_hour)
+    QuotaWindow.GPT_RESERVE -> context.getString(R.string.gpt_reserve)
 }
 
 class QuotaAlertNotificationManager(private val context: Context) {
@@ -114,22 +115,24 @@ class QuotaAlertNotificationManager(private val context: Context) {
         usage: CodexUsage,
         thresholdPercent: Int,
         window: QuotaWindow = QuotaWindow.WEEKLY
-    ) {
+    ): Boolean {
+        if (!notificationManager.areNotificationsEnabled()) return false
         val isApiKey = account.planType.isApiKeyPlan || usage.isApiKeyQuotaUsage(account.planType)
         val effectiveWindow = if (isApiKey) null else window
         val remaining = when {
             isApiKey -> usage.remainingPercent?.toInt()
             window == QuotaWindow.WEEKLY -> usage.remainingPercent?.toInt()
             window == QuotaWindow.FIVE_HOUR -> usage.fiveHourRemainingPercent?.toInt() ?: usage.remainingPercent?.toInt()
+            window == QuotaWindow.GPT_RESERVE -> usage.gptReserveRemainingPercent?.toInt()
             else -> usage.remainingPercent?.toInt()
-        } ?: return
+        } ?: return false
 
         val deepLinkUri = Uri.parse("codexquota://account/${account.id}")
         val intent = Intent(Intent.ACTION_VIEW, deepLinkUri, context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
 
-        val requestKey = if (window == QuotaWindow.FIVE_HOUR && !isApiKey) {
+        val requestKey = if (window != QuotaWindow.WEEKLY && !isApiKey) {
             "${account.id}_quota_${window.name}"
         } else {
             "${account.id}_quota"
@@ -170,13 +173,13 @@ class QuotaAlertNotificationManager(private val context: Context) {
             .setContentIntent(pendingIntent)
             .build()
 
-        try {
+        return try {
             val tag = if (isApiKey || window == QuotaWindow.WEEKLY) {
                 NOTIFICATION_TAG_PREFIX + account.id
             } else {
                 NOTIFICATION_TAG_PREFIX + window.name.lowercase() + "_" + account.id
             }
-            val notificationId = if (window == QuotaWindow.FIVE_HOUR && !isApiKey) {
+            val notificationId = if (window != QuotaWindow.WEEKLY && !isApiKey) {
                 NOTIFICATION_ID_BASE + (account.id + "_" + window.name).hashCode()
             } else {
                 NOTIFICATION_ID_BASE + account.id.hashCode()
@@ -186,8 +189,10 @@ class QuotaAlertNotificationManager(private val context: Context) {
                 notificationId,
                 notification
             )
+            true
         } catch (e: SecurityException) {
             // Notifications permission not granted
+            false
         }
     }
 

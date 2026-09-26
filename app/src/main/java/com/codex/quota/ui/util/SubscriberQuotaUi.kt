@@ -61,6 +61,7 @@ fun formatQuotaPercent(percent: Double?): String {
 fun localizedWindowLabel(context: Context, window: QuotaWindow?): String = when (window) {
     QuotaWindow.WEEKLY -> context.getString(R.string.quota_weekly)
     QuotaWindow.FIVE_HOUR -> context.getString(R.string.quota_five_hour)
+    QuotaWindow.GPT_RESERVE -> context.getString(R.string.gpt_reserve)
     null -> context.getString(R.string.quota_weekly)
 }
 

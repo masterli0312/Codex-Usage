@@ -98,7 +98,7 @@ fun SettingsScreen(viewModel: SettingsViewModel, modifier: Modifier = Modifier, 
                     ToggleRow(stringResource(R.string.five_hour_warning), stringResource(R.string.five_hour_warning_summary), preferences.includeFiveHourQuotaAlerts, { if (it) notificationPermission(); viewModel.setIncludeFiveHourQuotaAlerts(it) })
                     ToggleRow(stringResource(R.string.weekly_warning), stringResource(R.string.weekly_warning_summary), preferences.includeWeeklyQuotaAlerts, { if (it) notificationPermission(); viewModel.setIncludeWeeklyQuotaAlerts(it) })
                     ToggleRow(stringResource(R.string.reset_alert), stringResource(R.string.feature_unavailable), false, {}, enabled = false)
-                    ToggleRow(stringResource(R.string.reserve_alert), stringResource(R.string.feature_unavailable), false, {}, enabled = false)
+                    ToggleRow(stringResource(R.string.reserve_alert), stringResource(R.string.reserve_alert_summary), preferences.includeGptReserveAlerts, { if (it) notificationPermission(); viewModel.setIncludeGptReserveAlerts(it) })
                     ToggleRow(stringResource(R.string.official_credit_alert), stringResource(R.string.feature_unavailable), false, {}, enabled = false)
                     Text(stringResource(R.string.alert_method), fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
                     Text(stringResource(R.string.system_notification), style = MaterialTheme.typography.bodyMedium)

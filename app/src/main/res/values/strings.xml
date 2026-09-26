@@ -61,6 +61,7 @@
     <string name="weekly_warning_summary">Warn when the 7-day quota is low</string>
     <string name="reset_alert">Reset opportunity alert</string>
     <string name="reserve_alert">GPT Reserve alert</string>
+    <string name="reserve_alert_summary">Warn when GPT Reserve falls below a low quota threshold</string>
     <string name="official_credit_alert">Official Credit change alert</string>
     <string name="feature_unavailable">Not supported by the current data source</string>
     <string name="alert_method">Alert method</string>

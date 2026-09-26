@@ -157,11 +157,22 @@ class QuotaAlertEvaluatorTest {
         assertFalse(bigText.lowercase().contains("window"))
     }
 
+    @Test
+    fun pureNotificationHelpers_gptReserveWindow_formatsAppropriateText() {
+        val context = notificationContext()
+        val title = buildQuotaAlertTitle(context, QuotaWindow.GPT_RESERVE, isApiKey = false)
+        val content = buildQuotaAlertContentText(context, "Personal Plus", 10, QuotaWindow.GPT_RESERVE, isApiKey = false)
+
+        assertEquals("Low GPT Reserve Quota Alert", title)
+        assertTrue(content.contains("Personal Plus has only 10% GPT Reserve quota remaining."))
+    }
+
     private fun notificationContext(): Context = mockk {
         every { getString(any()) } answers {
             when (firstArg<Int>()) {
                 R.string.window_weekly -> "Weekly"
                 R.string.window_five_hour -> "5-hour"
+                R.string.gpt_reserve -> "GPT Reserve"
                 R.string.quota_notification_title -> "Low Quota Alert"
                 else -> error("Unexpected unformatted string resource")
             }

@@ -226,6 +226,7 @@ class FakeUserPreferencesRepository : UserPreferencesRepository {
     override suspend fun setQuotaAlertsEnabled(enabled: Boolean) {}
     override suspend fun setIncludeFiveHourQuotaAlerts(enabled: Boolean) {}
     override suspend fun setIncludeWeeklyQuotaAlerts(enabled: Boolean) {}
+    override suspend fun setIncludeGptReserveAlerts(enabled: Boolean) {}
     override suspend fun setQuotaAlertThresholds(thresholds: Set<Int>) {}
     override suspend fun toggleQuotaAlertThreshold(threshold: Int) {}
     override suspend fun setHasCompletedOnboarding(completed: Boolean) {}

@@ -59,6 +59,10 @@ class UserPreferencesRepositoryImpl(
         dataStoreManager.setIncludeWeeklyQuotaAlerts(enabled)
     }
 
+    override suspend fun setIncludeGptReserveAlerts(enabled: Boolean) {
+        dataStoreManager.setIncludeGptReserveAlerts(enabled)
+    }
+
     override suspend fun setQuotaAlertThresholds(thresholds: Set<Int>) {
         dataStoreManager.setQuotaAlertThresholds(thresholds)
     }

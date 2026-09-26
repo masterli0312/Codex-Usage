@@ -103,6 +103,21 @@ class QuotaRefreshWorker(
                         )
                     }
                 }
+
+                if (preferences.includeGptReserveAlerts && !isApiAccount) {
+                    val reserveRemaining = usage.gptReserveRemainingPercent
+                    if (reserveRemaining != null) {
+                        evaluateQuotaAlertForWindow(
+                            account = item.account,
+                            usage = usage,
+                            remainingPercent = reserveRemaining,
+                            window = QuotaWindow.GPT_RESERVE,
+                            thresholds = thresholds,
+                            prefsRepo = prefsRepo,
+                            notificationManager = quotaAlertNotificationManager
+                        )
+                    }
+                }
             }
         }
 
@@ -135,8 +150,9 @@ class QuotaRefreshWorker(
         if (decision.shouldClearThreshold) {
             prefsRepo.setLastNotifiedQuotaThreshold(account.id, null, window)
         } else if (decision.shouldNotify && decision.milestone != null) {
-            notificationManager.showLowQuotaAlert(account, usage, decision.milestone, window)
-            prefsRepo.setLastNotifiedQuotaThreshold(account.id, decision.milestone, window)
+            if (notificationManager.showLowQuotaAlert(account, usage, decision.milestone, window)) {
+                prefsRepo.setLastNotifiedQuotaThreshold(account.id, decision.milestone, window)
+            }
         }
     }
 

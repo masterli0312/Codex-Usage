@@ -61,6 +61,7 @@
     <string name="weekly_warning_summary">7 天额度即将耗尽时提醒</string>
     <string name="reset_alert">Reset 机会提醒</string>
     <string name="reserve_alert">GPT Reserve 提醒</string>
+    <string name="reserve_alert_summary">GPT Reserve 低于额度提醒阈值时通知</string>
     <string name="official_credit_alert">官方额度变化提醒</string>
     <string name="feature_unavailable">当前数据源暂不支持</string>
     <string name="alert_method">提醒方式</string>

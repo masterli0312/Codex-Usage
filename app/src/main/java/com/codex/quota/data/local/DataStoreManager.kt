@@ -52,6 +52,7 @@ class DataStoreManager(private val context: Context) : ResetOperationStore {
         val QUOTA_ALERTS_ENABLED = booleanPreferencesKey("quota_alerts_enabled")
         val INCLUDE_FIVE_HOUR_QUOTA_ALERTS = booleanPreferencesKey("include_five_hour_quota_alerts")
         val INCLUDE_WEEKLY_QUOTA_ALERTS = booleanPreferencesKey("include_weekly_quota_alerts")
+        val INCLUDE_GPT_RESERVE_ALERTS = booleanPreferencesKey("include_gpt_reserve_alerts")
         val QUOTA_ALERT_THRESHOLDS = stringSetPreferencesKey("quota_alert_thresholds_set")
         val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         val DISMISSED_RENEWAL_BANNERS = stringSetPreferencesKey("dismissed_renewal_banners")
@@ -84,6 +85,7 @@ class DataStoreManager(private val context: Context) : ResetOperationStore {
             quotaAlertsEnabled = prefs[PreferencesKeys.QUOTA_ALERTS_ENABLED] ?: true,
             includeFiveHourQuotaAlerts = prefs[PreferencesKeys.INCLUDE_FIVE_HOUR_QUOTA_ALERTS] ?: false,
             includeWeeklyQuotaAlerts = prefs[PreferencesKeys.INCLUDE_WEEKLY_QUOTA_ALERTS] ?: true,
+            includeGptReserveAlerts = prefs[PreferencesKeys.INCLUDE_GPT_RESERVE_ALERTS] ?: false,
             quotaAlertThresholds = thresholds,
             hasCompletedOnboarding = prefs[PreferencesKeys.ONBOARDING_COMPLETED] ?: false,
             dismissedRenewalBannerAccountIds = prefs[PreferencesKeys.DISMISSED_RENEWAL_BANNERS] ?: emptySet()
@@ -152,6 +154,12 @@ class DataStoreManager(private val context: Context) : ResetOperationStore {
         }
     }
 
+    suspend fun setIncludeGptReserveAlerts(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[PreferencesKeys.INCLUDE_GPT_RESERVE_ALERTS] = enabled
+        }
+    }
+
     suspend fun setQuotaAlertThresholds(thresholds: Set<Int>) {
         context.dataStore.edit { prefs ->
             prefs[PreferencesKeys.QUOTA_ALERT_THRESHOLDS] = thresholds.map { it.toString() }.toSet()
@@ -213,6 +221,7 @@ class DataStoreManager(private val context: Context) : ResetOperationStore {
         return when (window) {
             QuotaWindow.WEEKLY -> intPreferencesKey("last_quota_alert_threshold_$accountId")
             QuotaWindow.FIVE_HOUR -> intPreferencesKey("last_quota_alert_threshold_5h_$accountId")
+            QuotaWindow.GPT_RESERVE -> intPreferencesKey("last_quota_alert_threshold_gpt_reserve_$accountId")
         }
     }
 

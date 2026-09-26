@@ -98,6 +98,12 @@ class SettingsViewModel(
         }
     }
 
+    fun setIncludeGptReserveAlerts(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesRepository.setIncludeGptReserveAlerts(enabled)
+        }
+    }
+
     fun toggleQuotaAlertThreshold(threshold: Int) {
         viewModelScope.launch {
             preferencesRepository.toggleQuotaAlertThreshold(threshold)
