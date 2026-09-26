@@ -91,17 +91,7 @@ fun DashboardScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
-                        Text(
-                            text = getGreeting(),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = stringResource(R.string.codex_quotas),
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                        )
-                    }
+                    Text(text = stringResource(R.string.codex_usage_title), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
                 },
                 actions = {
                     if (isRefreshing) {
@@ -159,10 +149,6 @@ fun DashboardScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    item {
-                        OverviewSummaryCard(accounts = accounts)
-                    }
-
                     items(accounts, key = { it.account.id }) { item ->
                         AccountCard(
                             item = item,

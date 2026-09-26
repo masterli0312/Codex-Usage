@@ -39,6 +39,7 @@ import com.codex.quota.domain.usecase.UpdateAccountUseCase
 import com.codex.quota.ui.feature.about.AboutScreen
 import com.codex.quota.ui.feature.accountdetail.AccountDetailScreen
 import com.codex.quota.ui.feature.accountdetail.AccountDetailViewModel
+import com.codex.quota.ui.feature.accountdetail.EstimateScreen
 import com.codex.quota.ui.feature.addaccount.AddAccountScreen
 import com.codex.quota.ui.feature.addaccount.AddAccountViewModel
 import com.codex.quota.ui.feature.dashboard.DashboardScreen
@@ -160,6 +161,7 @@ fun AppNavigation(
                         accountId = accountId,
                         repository = app.repository,
                         preferencesRepository = app.preferencesRepository,
+                        consumeResetCredit = app.consumeResetCredit,
                         refreshAccountUseCase = RefreshAccountUseCase(app.repository),
                         updateAccountUseCase = UpdateAccountUseCase(app.repository),
                         removeAccountUseCase = RemoveAccountUseCase(app.repository)
@@ -167,8 +169,18 @@ fun AppNavigation(
                 }
                 AccountDetailScreen(
                     viewModel = detailViewModel,
-                    onNavigateBack = { navController.popBackStack() }
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToEstimate = { navController.navigate(Screen.Estimate.createRoute(accountId)) }
                 )
+            }
+
+            composable(Screen.Estimate.route, arguments = listOf(navArgument("accountId") { type = NavType.StringType })) { backStackEntry ->
+                val accountId = backStackEntry.arguments?.getString("accountId").orEmpty()
+                val detailViewModel: AccountDetailViewModel = scopedViewModel(key = accountId) {
+                    AccountDetailViewModel(app, accountId, app.repository, app.preferencesRepository,
+                        RefreshAccountUseCase(app.repository), UpdateAccountUseCase(app.repository), RemoveAccountUseCase(app.repository), app.consumeResetCredit)
+                }
+                EstimateScreen(detailViewModel, onNavigateBack = { navController.popBackStack() })
             }
 
             composable(
@@ -208,8 +220,16 @@ fun AppNavigation(
                 }
                 SettingsScreen(
                     viewModel = settingsViewModel,
-                    onNavigateToAbout = { navController.navigate(Screen.About.route) }
+                    onNavigate = { navController.navigate(Screen.SettingsPage.createRoute(it)) }
                 )
+            }
+
+            composable(Screen.SettingsPage.route, arguments = listOf(navArgument("page") { type = NavType.StringType })) { backStackEntry ->
+                val settingsViewModel: SettingsViewModel = scopedViewModel {
+                    SettingsViewModel(app.preferencesRepository, app.repository)
+                }
+                SettingsScreen(settingsViewModel, page = backStackEntry.arguments?.getString("page").orEmpty(),
+                    onNavigateBack = { navController.popBackStack() })
             }
 
             composable(Screen.About.route) {

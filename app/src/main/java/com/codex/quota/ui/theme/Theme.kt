@@ -13,9 +13,9 @@ import androidx.compose.ui.platform.LocalContext
 import com.codex.quota.domain.model.AppThemeMode
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Emerald400,
+    primary = Color(0xFF6AA5FF),
     onPrimary = Slate950,
-    primaryContainer = Emerald700,
+    primaryContainer = Color(0xFF164078),
     onPrimaryContainer = Emerald50,
     secondary = Cyan400,
     onSecondary = Slate950,
@@ -33,10 +33,10 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Emerald600,
+    primary = Color(0xFF0868E8),
     onPrimary = Color.White,
-    primaryContainer = Emerald100,
-    onPrimaryContainer = Emerald700,
+    primaryContainer = Color(0xFFE6F1FF),
+    onPrimaryContainer = Color(0xFF134F9C),
     secondary = Cyan500,
     onSecondary = Color.White,
     secondaryContainer = Color(0xFFE0F2FE),

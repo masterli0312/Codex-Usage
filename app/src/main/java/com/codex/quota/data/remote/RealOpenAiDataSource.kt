@@ -76,8 +76,8 @@ class RealOpenAiDataSource(
             val subRenewalEpochMs = checkData?.subscriptionRenewsEpochMs ?: decoded.subscriptionExpiresAtEpochMs
             val accountCreatedEpochMs = checkData?.accountCreatedEpochMs
             val billingPeriod = checkData?.billingPeriod ?: "Monthly"
-            val willAutoRenew = checkData?.willRenew ?: true
-            val hasActiveSubscription = checkData?.hasActiveSubscription ?: true
+            val willAutoRenew = checkData?.willRenew
+            val hasActiveSubscription = checkData?.hasActiveSubscription
 
             when (whamResponse) {
                 is ApiResponse.Success -> {

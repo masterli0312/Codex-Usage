@@ -76,7 +76,7 @@ class QuotaRefreshWorker(
 
                 // 1. Primary/Weekly evaluation (always evaluated for all accounts)
                 val primaryRemaining = usage.remainingPercent
-                if (primaryRemaining != null) {
+                if (primaryRemaining != null && preferences.includeWeeklyQuotaAlerts) {
                     evaluateQuotaAlertForWindow(
                         account = item.account,
                         usage = usage,

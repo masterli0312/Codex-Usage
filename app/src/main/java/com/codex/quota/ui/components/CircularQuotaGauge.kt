@@ -48,7 +48,7 @@ fun CircularQuotaGauge(
         remainingPercent == null -> MaterialTheme.colorScheme.outline
         remainingPercent < 15.0 -> Red500
         remainingPercent < 40.0 -> Amber500
-        else -> Emerald400
+        else -> MaterialTheme.colorScheme.primary
     }
 
     val trackColor = MaterialTheme.colorScheme.surfaceVariant
@@ -79,11 +79,7 @@ fun CircularQuotaGauge(
             // Draw active progress
             if (animatedFraction > 0f) {
                 drawArc(
-                    brush = Brush.sweepGradient(
-                        0.0f to progressColor,
-                        0.75f to Cyan400,
-                        1.0f to progressColor
-                    ),
+                    color = progressColor,
                     startAngle = 135f,
                     sweepAngle = 270f * animatedFraction,
                     useCenter = false,

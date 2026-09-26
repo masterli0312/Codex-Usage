@@ -41,6 +41,7 @@ data class UserPreferences(
     val signedOutNotificationsEnabled: Boolean = true,
     val quotaAlertsEnabled: Boolean = true,
     val includeFiveHourQuotaAlerts: Boolean = false,
+    val includeWeeklyQuotaAlerts: Boolean = true,
     val quotaAlertThresholds: Set<Int> = setOf(5, 10, 25),
     val hasCompletedOnboarding: Boolean = false,
     val dismissedRenewalBannerAccountIds: Set<String> = emptySet()

@@ -15,13 +15,31 @@ import com.codex.quota.domain.model.QuotaWindow
 import com.codex.quota.domain.model.RefreshIntervalMinutes
 import com.codex.quota.domain.model.UserPreferences
 import com.codex.quota.domain.model.WidgetThemeMode
+import com.codex.quota.domain.repository.ResetOperationStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import java.util.UUID
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_settings")
 
-class DataStoreManager(private val context: Context) {
+class DataStoreManager(private val context: Context) : ResetOperationStore {
+
+    override suspend fun getOrCreateResetOperationId(accountId: String): String {
+        val key = stringPreferencesKey("pending_reset_operation_" + accountId)
+        var operationId = ""
+        context.dataStore.edit { prefs ->
+            operationId = prefs[key] ?: UUID.randomUUID().toString().also { prefs[key] = it }
+        }
+        return operationId
+    }
+
+    override suspend fun clearResetOperationId(accountId: String, operationId: String) {
+        val key = stringPreferencesKey("pending_reset_operation_" + accountId)
+        context.dataStore.edit { prefs ->
+            if (prefs[key] == operationId) prefs.remove(key)
+        }
+    }
 
     private object PreferencesKeys {
         val THEME_MODE = stringPreferencesKey("theme_mode")
@@ -33,6 +51,7 @@ class DataStoreManager(private val context: Context) {
         val SIGNED_OUT_NOTIFICATIONS = booleanPreferencesKey("signed_out_notifications_enabled")
         val QUOTA_ALERTS_ENABLED = booleanPreferencesKey("quota_alerts_enabled")
         val INCLUDE_FIVE_HOUR_QUOTA_ALERTS = booleanPreferencesKey("include_five_hour_quota_alerts")
+        val INCLUDE_WEEKLY_QUOTA_ALERTS = booleanPreferencesKey("include_weekly_quota_alerts")
         val QUOTA_ALERT_THRESHOLDS = stringSetPreferencesKey("quota_alert_thresholds_set")
         val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         val DISMISSED_RENEWAL_BANNERS = stringSetPreferencesKey("dismissed_renewal_banners")
@@ -64,6 +83,7 @@ class DataStoreManager(private val context: Context) {
             signedOutNotificationsEnabled = prefs[PreferencesKeys.SIGNED_OUT_NOTIFICATIONS] ?: true,
             quotaAlertsEnabled = prefs[PreferencesKeys.QUOTA_ALERTS_ENABLED] ?: true,
             includeFiveHourQuotaAlerts = prefs[PreferencesKeys.INCLUDE_FIVE_HOUR_QUOTA_ALERTS] ?: false,
+            includeWeeklyQuotaAlerts = prefs[PreferencesKeys.INCLUDE_WEEKLY_QUOTA_ALERTS] ?: true,
             quotaAlertThresholds = thresholds,
             hasCompletedOnboarding = prefs[PreferencesKeys.ONBOARDING_COMPLETED] ?: false,
             dismissedRenewalBannerAccountIds = prefs[PreferencesKeys.DISMISSED_RENEWAL_BANNERS] ?: emptySet()
@@ -123,6 +143,12 @@ class DataStoreManager(private val context: Context) {
     suspend fun setIncludeFiveHourQuotaAlerts(enabled: Boolean) {
         context.dataStore.edit { prefs ->
             prefs[PreferencesKeys.INCLUDE_FIVE_HOUR_QUOTA_ALERTS] = enabled
+        }
+    }
+
+    suspend fun setIncludeWeeklyQuotaAlerts(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[PreferencesKeys.INCLUDE_WEEKLY_QUOTA_ALERTS] = enabled
         }
     }
 

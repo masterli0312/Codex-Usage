@@ -6,10 +6,12 @@ import com.codex.quota.data.local.AppDatabase
 import com.codex.quota.data.local.DataStoreManager
 import com.codex.quota.data.remote.MockOpenAiDataSource
 import com.codex.quota.data.remote.RealOpenAiDataSource
+import com.codex.quota.data.remote.WhamResetCreditConsumer
 import com.codex.quota.data.repository.CodexAccountRepositoryImpl
 import com.codex.quota.data.repository.UserPreferencesRepositoryImpl
 import com.codex.quota.domain.repository.CodexAccountRepository
 import com.codex.quota.domain.repository.UserPreferencesRepository
+import com.codex.quota.domain.usecase.ConsumeResetCreditUseCase
 import com.codex.quota.security.EncryptedCredentialStore
 import com.codex.quota.security.KeystoreManager
 import com.codex.quota.worker.WorkScheduler
@@ -39,6 +41,9 @@ class CodexQuotaApplication : Application() {
     lateinit var preferencesRepository: UserPreferencesRepository
         private set
 
+    lateinit var consumeResetCredit: ConsumeResetCreditUseCase
+        private set
+
     override fun onCreate() {
         super.onCreate()
 
@@ -57,6 +62,7 @@ class CodexQuotaApplication : Application() {
         )
 
         preferencesRepository = UserPreferencesRepositoryImpl(dataStoreManager)
+        consumeResetCredit = ConsumeResetCreditUseCase(repository, credentialStore, dataStoreManager, WhamResetCreditConsumer())
 
         // Schedule periodic background refresh
         applicationScope.launch {

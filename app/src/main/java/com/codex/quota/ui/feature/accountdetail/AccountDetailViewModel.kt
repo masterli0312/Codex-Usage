@@ -10,6 +10,8 @@ import com.codex.quota.domain.model.CodexUsage
 import com.codex.quota.domain.repository.CodexAccountRepository
 import com.codex.quota.domain.repository.UserPreferencesRepository
 import com.codex.quota.domain.usecase.RefreshAccountUseCase
+import com.codex.quota.domain.usecase.ConsumeResetCreditUseCase
+import com.codex.quota.domain.usecase.ResetSpendOutcome
 import com.codex.quota.domain.usecase.RemoveAccountUseCase
 import com.codex.quota.domain.usecase.UpdateAccountUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,7 +29,8 @@ class AccountDetailViewModel(
     private val preferencesRepository: UserPreferencesRepository,
     private val refreshAccountUseCase: RefreshAccountUseCase,
     private val updateAccountUseCase: UpdateAccountUseCase,
-    private val removeAccountUseCase: RemoveAccountUseCase
+    private val removeAccountUseCase: RemoveAccountUseCase,
+    private val consumeResetCredit: ConsumeResetCreditUseCase
 ) : ViewModel() {
 
     private val localizedContext = ContextCompat.getContextForLanguage(context)
@@ -55,6 +58,27 @@ class AccountDetailViewModel(
 
     private val _accountDeleted = MutableStateFlow(false)
     val accountDeleted: StateFlow<Boolean> = _accountDeleted.asStateFlow()
+
+    private val _isResetting = MutableStateFlow(false)
+    val isResetting: StateFlow<Boolean> = _isResetting.asStateFlow()
+
+    private val _resetOutcome = MutableStateFlow<ResetSpendOutcome?>(null)
+    val resetOutcome: StateFlow<ResetSpendOutcome?> = _resetOutcome.asStateFlow()
+
+    fun consumeReset() {
+        if (_isResetting.value) return
+        viewModelScope.launch {
+            if (_isResetting.value) return@launch
+            _isResetting.value = true
+            try {
+                _resetOutcome.value = consumeResetCredit(accountId)
+            } finally {
+                _isResetting.value = false
+            }
+        }
+    }
+
+    fun clearResetOutcome() { _resetOutcome.value = null }
 
     fun refresh() {
         viewModelScope.launch {

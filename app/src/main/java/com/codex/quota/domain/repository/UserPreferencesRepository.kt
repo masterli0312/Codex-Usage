@@ -19,6 +19,7 @@ interface UserPreferencesRepository {
     suspend fun setSignedOutNotificationsEnabled(enabled: Boolean)
     suspend fun setQuotaAlertsEnabled(enabled: Boolean)
     suspend fun setIncludeFiveHourQuotaAlerts(enabled: Boolean)
+    suspend fun setIncludeWeeklyQuotaAlerts(enabled: Boolean)
     suspend fun setQuotaAlertThresholds(thresholds: Set<Int>)
     suspend fun toggleQuotaAlertThreshold(threshold: Int)
     suspend fun setHasCompletedOnboarding(completed: Boolean)

@@ -92,6 +92,12 @@ class SettingsViewModel(
         }
     }
 
+    fun setIncludeWeeklyQuotaAlerts(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesRepository.setIncludeWeeklyQuotaAlerts(enabled)
+        }
+    }
+
     fun toggleQuotaAlertThreshold(threshold: Int) {
         viewModelScope.launch {
             preferencesRepository.toggleQuotaAlertThreshold(threshold)
