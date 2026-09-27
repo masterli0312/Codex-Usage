@@ -4,7 +4,7 @@
     <string name="official_credit">Official Credit</string>
     <string name="reset_opportunities">Reset opportunities</string>
     <string name="value_unavailable">—</string>
-    <string name="renewal_amount">Renewal amount</string>
+    <string name="renewal_expiry_date">Renewal expiry date</string>
     <string name="auto_renewal">Auto-renewal</string>
     <string name="enabled">Enabled</string>
     <string name="disabled">Disabled</string>
@@ -101,6 +101,7 @@
     <string name="reset_hours">%1$d h</string>
     <string name="reset_minutes">%1$d m</string>
     <string name="reset_now">Now</string>
+    <string name="reset_time_unavailable">Reset time unavailable</string>
     <plurals name="percent_remaining_accessibility">
         <item quantity="one">%1$d percent quota remaining</item>
         <item quantity="other">%1$d percent quota remaining</item>

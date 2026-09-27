@@ -17,13 +17,14 @@ fun RelativeTimeText(
     epochMs: Long?,
     modifier: Modifier = Modifier,
     style: TextStyle = MaterialTheme.typography.bodySmall,
-    color: Color = MaterialTheme.colorScheme.onSurfaceVariant
+    color: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    now: Long = System.currentTimeMillis()
 ) {
     val locale = LocalConfiguration.current.locales[0]
     val text = if (epochMs == null || epochMs <= 0) {
         stringResource(R.string.never_synced)
     } else {
-        val diff = System.currentTimeMillis() - epochMs
+        val diff = now - epochMs
         val relative = when {
             diff < 60_000L -> stringResource(R.string.just_now)
             diff < 3600_000L -> stringResource(R.string.relative_minutes_ago, diff / 60_000L)

@@ -4,7 +4,7 @@
     <string name="official_credit">官方 Credit</string>
     <string name="reset_opportunities">Reset 机会</string>
     <string name="value_unavailable">—</string>
-    <string name="renewal_amount">续费金额</string>
+    <string name="renewal_expiry_date">续费到期日期</string>
     <string name="auto_renewal">自动续费</string>
     <string name="enabled">已开启</string>
     <string name="disabled">已关闭</string>
@@ -103,6 +103,7 @@
     <string name="reset_hours">%1$d 小时后重置</string>
     <string name="reset_minutes">%1$d 分钟后重置</string>
     <string name="reset_now">即将重置</string>
+    <string name="reset_time_unavailable">暂无重置时间</string>
     <plurals name="active_accounts_summary">
         <item quantity="other">正常账号 %1$d / %2$d</item>
     </plurals>
@@ -115,7 +116,7 @@
     <string name="diagnostic_message">诊断信息：%1$s</string>
     <string name="remove_account_message">这将移除“%1$s”，并从此设备安全删除其保存的 API Key。</string>
     <string name="threshold_label">≤ %1$d%%</string>
-    <string name="relative_updated">更新于 %1$s</string>
+    <string name="relative_updated">%1$s更新</string>
     <string name="relative_minutes_ago">%1$d 分钟前</string>
     <string name="relative_hours_ago">%1$d 小时前</string>
     <string name="expiry_line">%1$s %2$s</string>

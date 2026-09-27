@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -18,9 +19,14 @@ import androidx.compose.ui.unit.dp
 import com.codex.quota.R
 import com.codex.quota.domain.usecase.ResetSpendOutcome
 import com.codex.quota.ui.components.CircularQuotaGauge
+import com.codex.quota.ui.components.QuotaWindowLine
+import com.codex.quota.ui.components.RelativeTimeText
 import com.codex.quota.ui.components.StatusBadge
+import com.codex.quota.ui.components.rememberQuotaClock
 import com.codex.quota.ui.util.formatQuotaPercent
 import com.codex.quota.ui.util.localizedPlanName
+import java.text.DateFormat
+import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,6 +41,8 @@ fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () ->
     LaunchedEffect(deleted) { if (deleted) onNavigateBack() }
     val account = data?.account
     val usage = data?.usage
+    val now = rememberQuotaClock()
+    val renewalDate = usage?.subscriptionRenewalEpochMs ?: account?.customRenewalDateEpochMs
     Scaffold(modifier = modifier.fillMaxSize(), topBar = {
         TopAppBar(title = {
             Column {
@@ -49,14 +57,20 @@ fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () ->
         else LazyColumn(modifier = Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item {
                 Panel {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) { StatusBadge(usage?.status ?: account.authStatus) }
-                    Spacer(Modifier.height(5.dp))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) { CircularQuotaGauge(usage?.remainingPercent, size = 116.dp, strokeWidth = 10.dp) }
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                        CircularQuotaGauge(usage?.remainingPercent, size = 86.dp, strokeWidth = 9.dp)
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            QuotaWindowLine(stringResource(R.string.quota_weekly), usage?.remainingPercent, usage?.resetAtEpochMs, now)
+                            QuotaWindowLine(stringResource(R.string.quota_five_hour), usage?.fiveHourRemainingPercent, usage?.fiveHourResetAtEpochMs, now)
+                            QuotaWindowLine(stringResource(R.string.gpt_reserve), usage?.gptReserveRemainingPercent, usage?.gptReserveResetAtEpochMs, now)
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
                     HorizontalDivider()
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        ValueColumn(stringResource(R.string.quota_weekly), formatQuotaPercent(usage?.remainingPercent))
-                        ValueColumn(stringResource(R.string.quota_five_hour), formatQuotaPercent(usage?.fiveHourRemainingPercent))
-                        ValueColumn(stringResource(R.string.gpt_reserve), formatQuotaPercent(usage?.gptReserveRemainingPercent))
+                    Spacer(Modifier.height(10.dp))
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                        StatusBadge(usage?.status ?: account.authStatus)
+                        RelativeTimeText(account.lastSuccessfulSyncEpochMs, style = MaterialTheme.typography.labelSmall, now = now)
                     }
                 }
             }
@@ -65,7 +79,12 @@ fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () ->
                     Text(stringResource(R.string.subscription_renewal), fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(8.dp))
                     LabelValue(stringResource(R.string.plan_type), localizedPlanName(LocalContext.current, account.planType))
-                    LabelValue(stringResource(R.string.renewal_amount), stringResource(R.string.value_unavailable))
+                    LabelValue(
+                        stringResource(R.string.renewal_expiry_date),
+                        renewalDate?.takeIf { it > 0L }?.let {
+                            DateFormat.getDateInstance(DateFormat.MEDIUM, LocalConfiguration.current.locales[0]).format(Date(it))
+                        } ?: stringResource(R.string.value_unavailable)
+                    )
                     LabelValue(stringResource(R.string.auto_renewal), usage?.willAutoRenew?.let { if (it) stringResource(R.string.enabled) else stringResource(R.string.disabled) } ?: stringResource(R.string.value_unavailable))
                 }
             }
@@ -124,14 +143,6 @@ fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () ->
 private fun Panel(content: @Composable ColumnScope.() -> Unit) {
     Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(Modifier.fillMaxWidth().padding(16.dp), content = content)
-    }
-}
-
-@Composable
-private fun ValueColumn(label: String, value: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
     }
 }
 
