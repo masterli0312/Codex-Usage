@@ -11,9 +11,13 @@ import com.codex.quota.domain.repository.CodexAccountRepository
 import com.codex.quota.domain.repository.UserPreferencesRepository
 import com.codex.quota.domain.usecase.RefreshAccountUseCase
 import com.codex.quota.domain.usecase.ConsumeResetCreditUseCase
+import com.codex.quota.domain.usecase.ActivateFiveHourWindowUseCase
+import com.codex.quota.domain.usecase.FiveHourActivationOutcome
 import com.codex.quota.domain.usecase.ResetSpendOutcome
 import com.codex.quota.domain.usecase.RemoveAccountUseCase
 import com.codex.quota.domain.usecase.UpdateAccountUseCase
+import com.codex.quota.widget.WidgetUpdateHelper
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -30,10 +34,12 @@ class AccountDetailViewModel(
     private val refreshAccountUseCase: RefreshAccountUseCase,
     private val updateAccountUseCase: UpdateAccountUseCase,
     private val removeAccountUseCase: RemoveAccountUseCase,
-    private val consumeResetCredit: ConsumeResetCreditUseCase
+    private val consumeResetCredit: ConsumeResetCreditUseCase,
+    private val activateFiveHourWindow: ActivateFiveHourWindowUseCase
 ) : ViewModel() {
 
     private val localizedContext = ContextCompat.getContextForLanguage(context)
+    private val appContext = context.applicationContext
 
     val accountState: StateFlow<AccountWithUsage?> = repository.observeAccount(accountId)
         .stateIn(
@@ -64,6 +70,30 @@ class AccountDetailViewModel(
 
     private val _resetOutcome = MutableStateFlow<ResetSpendOutcome?>(null)
     val resetOutcome: StateFlow<ResetSpendOutcome?> = _resetOutcome.asStateFlow()
+
+    private val _isActivatingFiveHour = MutableStateFlow(false)
+    val isActivatingFiveHour: StateFlow<Boolean> = _isActivatingFiveHour.asStateFlow()
+
+    private val _fiveHourActivationOutcome = MutableStateFlow<FiveHourActivationOutcome?>(null)
+    val fiveHourActivationOutcome: StateFlow<FiveHourActivationOutcome?> = _fiveHourActivationOutcome.asStateFlow()
+
+    fun activateFiveHour(resetAtEpochMs: Long) {
+        if (!_isActivatingFiveHour.compareAndSet(false, true)) return
+        viewModelScope.launch {
+            try {
+                _fiveHourActivationOutcome.value = activateFiveHourWindow(accountId, resetAtEpochMs)
+                WidgetUpdateHelper.updateAllWidgets(appContext)
+            } catch (exception: CancellationException) {
+                throw exception
+            } catch (_: Exception) {
+                _fiveHourActivationOutcome.value = FiveHourActivationOutcome.RefreshFailed
+            } finally {
+                _isActivatingFiveHour.value = false
+            }
+        }
+    }
+
+    fun clearFiveHourActivationOutcome() { _fiveHourActivationOutcome.value = null }
 
     fun consumeReset() {
         if (_isResetting.value) return
@@ -136,6 +166,7 @@ class AccountDetailViewModel(
         viewModelScope.launch {
             val result = removeAccountUseCase(accountId)
             if (result.isSuccess) {
+                preferencesRepository.setAutoActivateFiveHourAccount(accountId, false)
                 _accountDeleted.value = true
             } else {
                 _uiMessage.value = localizedContext.getString(R.string.error_delete_account)

@@ -1,6 +1,19 @@
 <resources>
     <string name="auto_activate_five_hour">自动激活下一个 5 小时窗口</string>
-    <string name="auto_activate_five_hour_summary">重置后发送一条简短的 Codex 请求，会消耗额度；需重新通过 OAuth 登录并保持网络畅通。Android 可能延迟后台执行。默认关闭。</string>
+    <string name="auto_activate_five_hour_summary">按账号选择：重置后发送一条简短的 Codex 请求，会消耗额度并需要网络；旧账号可能需要重新通过 OAuth 登录。Android 可能延迟后台执行。默认关闭。</string>
+    <string name="auto_activate_five_hour_no_accounts">添加 ChatGPT 账号后即可选择自动激活的账号。</string>
+    <string name="activate_five_hour_now">立即激活 5 小时额度</string>
+    <string name="activate_five_hour_confirm_title">激活 5 小时额度？</string>
+    <string name="activate_five_hour_confirm_message">这会发送一条真实的 Codex 请求并消耗少量额度。为避免重复消耗，每个重置窗口只尝试一次。</string>
+    <string name="activate_five_hour_confirm_action">发送请求</string>
+    <string name="activate_five_hour_success_title">5 小时额度已激活</string>
+    <string name="activate_five_hour_success_message">Codex 已完成请求，以下是最新读取的官方额度。</string>
+    <string name="activate_five_hour_refresh_pending">Codex 已完成请求，但额度刷新失败，请稍后再刷新。</string>
+    <string name="activate_five_hour_not_due">5 小时额度尚未到重置时间，或本次窗口已经结束。</string>
+    <string name="activate_five_hour_login_required">请重新通过 OAuth 登录该账号后再激活。</string>
+    <string name="activate_five_hour_already_attempted">本次重置窗口已经尝试发送请求，不会重复消耗额度。</string>
+    <string name="activate_five_hour_refresh_failed">发送前无法刷新账号，请检查网络后重试。</string>
+    <string name="activate_five_hour_uncertain">请求结果暂时无法确认。为避免重复消耗，本次窗口不会自动重试。</string>
     <string name="codex_usage_title">Codex Usage</string>
     <string name="gpt_reserve">GPT Reserve</string>
     <string name="official_credit">官方 Credit</string>

@@ -17,6 +17,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.codex.quota.R
+import com.codex.quota.domain.model.AuthStatus
+import com.codex.quota.domain.usecase.FiveHourActivationOutcome
 import com.codex.quota.domain.usecase.ResetSpendOutcome
 import com.codex.quota.ui.components.CircularQuotaGauge
 import com.codex.quota.ui.components.QuotaWindowLine
@@ -38,13 +40,24 @@ fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () ->
     val deleted by viewModel.accountDeleted.collectAsState()
     val resetting by viewModel.isResetting.collectAsState()
     val resetOutcome by viewModel.resetOutcome.collectAsState()
+    val activatingFiveHour by viewModel.isActivatingFiveHour.collectAsState()
+    val fiveHourActivationOutcome by viewModel.fiveHourActivationOutcome.collectAsState()
     var showDelete by remember { mutableStateOf(false) }
     var showReset by remember { mutableStateOf(false) }
+    var showFiveHourActivation by remember { mutableStateOf(false) }
     LaunchedEffect(deleted) { if (deleted) onNavigateBack() }
     val account = data?.account
     val usage = data?.usage
     val context = LocalContext.current
     val now = rememberQuotaClock()
+    val fiveHourResetAt = usage?.fiveHourResetAtEpochMs
+    val fiveHourBoundary = fiveHourResetAt?.let { if (it > now) it - 5 * 60 * 60_000L else it }
+    val unusedFiveHourWindow = (usage?.fiveHourRemainingPercent ?: 0.0) >= 99.5 ||
+        (usage?.fiveHourUsedPercent?.let { it <= 0.5 } == true)
+    val canActivateFiveHour = account?.isDemoAccount == false &&
+        usage?.status == AuthStatus.AUTHENTICATED && fiveHourBoundary != null &&
+        fiveHourBoundary > 0L && fiveHourBoundary <= now &&
+        now - fiveHourBoundary < 5 * 60 * 60_000L && unusedFiveHourWindow
     val renewalDate = usage?.subscriptionRenewalEpochMs?.takeIf { it > 0L }
         ?: account?.customRenewalDateEpochMs?.takeIf { it > 0L }
     Scaffold(modifier = modifier.fillMaxSize(), topBar = {
@@ -76,6 +89,12 @@ fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () ->
                         StatusBadge(usage?.status ?: account.authStatus)
                         RelativeTimeText(account.lastSuccessfulSyncEpochMs, style = MaterialTheme.typography.labelSmall, now = now)
                     }
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = { showFiveHourActivation = true },
+                        enabled = canActivateFiveHour && !activatingFiveHour && !refreshing && !resetting,
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text(stringResource(R.string.activate_five_hour_now)) }
                 }
             }
             item {
@@ -94,13 +113,48 @@ fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () ->
             }
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { showReset = true }, enabled = !resetting && (usage?.bankedResets ?: 0) > 0, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.use_reset)) }
+                    Button(onClick = { showReset = true }, enabled = !resetting && !activatingFiveHour && (usage?.bankedResets ?: 0) > 0, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.use_reset)) }
                     OutlinedButton(onClick = { showDelete = true }, modifier = Modifier.weight(1f)) { Icon(Icons.Default.Delete, contentDescription = null); Text(stringResource(R.string.remove_account)) }
                 }
             }
         }
     }
     if (showDelete) AlertDialog(onDismissRequest = { showDelete = false }, title = { Text(stringResource(R.string.remove_account)) }, text = { Text(stringResource(R.string.remove_account_message, account?.let { localizedAccountNickname(context, it) } ?: "")) }, confirmButton = { TextButton(onClick = { showDelete = false; viewModel.deleteAccount() }) { Text(stringResource(R.string.remove_account)) } }, dismissButton = { TextButton(onClick = { showDelete = false }) { Text(stringResource(R.string.action_cancel)) } })
+    if (showFiveHourActivation) AlertDialog(
+        onDismissRequest = { showFiveHourActivation = false },
+        title = { Text(stringResource(R.string.activate_five_hour_confirm_title)) },
+        text = { Text(stringResource(R.string.activate_five_hour_confirm_message)) },
+        confirmButton = { Button(onClick = {
+            showFiveHourActivation = false
+            fiveHourBoundary?.let(viewModel::activateFiveHour)
+        }, enabled = canActivateFiveHour && !activatingFiveHour) { Text(stringResource(R.string.activate_five_hour_confirm_action)) } },
+        dismissButton = { TextButton(onClick = { showFiveHourActivation = false }) { Text(stringResource(R.string.action_cancel)) } }
+    )
+    when (val outcome = fiveHourActivationOutcome) {
+        is FiveHourActivationOutcome.Success -> AlertDialog(
+            onDismissRequest = viewModel::clearFiveHourActivationOutcome,
+            title = { Text(stringResource(R.string.activate_five_hour_success_title)) },
+            text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(stringResource(if (outcome.freshUsage == null) R.string.activate_five_hour_refresh_pending else R.string.activate_five_hour_success_message))
+                LabelValue(stringResource(R.string.quota_five_hour), formatQuotaPercent(outcome.freshUsage?.fiveHourRemainingPercent))
+            } },
+            confirmButton = { TextButton(onClick = viewModel::clearFiveHourActivationOutcome) { Text(stringResource(R.string.action_got_it)) } }
+        )
+        null -> Unit
+        else -> AlertDialog(
+            onDismissRequest = viewModel::clearFiveHourActivationOutcome,
+            title = { Text(stringResource(R.string.activate_five_hour_now)) },
+            text = { Text(stringResource(when (outcome) {
+                FiveHourActivationOutcome.NotDue -> R.string.activate_five_hour_not_due
+                FiveHourActivationOutcome.LoginRequired -> R.string.activate_five_hour_login_required
+                FiveHourActivationOutcome.AlreadyAttempted -> R.string.activate_five_hour_already_attempted
+                FiveHourActivationOutcome.RefreshFailed -> R.string.activate_five_hour_refresh_failed
+                FiveHourActivationOutcome.Uncertain -> R.string.activate_five_hour_uncertain
+                else -> R.string.activate_five_hour_uncertain
+            })) },
+            confirmButton = { TextButton(onClick = viewModel::clearFiveHourActivationOutcome) { Text(stringResource(R.string.action_got_it)) } }
+        )
+    }
     if (showReset) AlertDialog(onDismissRequest = { showReset = false }, title = { Text(stringResource(R.string.reset_confirm_title)) }, text = {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.reset_consumes_one))
@@ -142,6 +196,7 @@ fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () ->
         )
     }
 }
+
 
 @Composable
 private fun Panel(content: @Composable ColumnScope.() -> Unit) {

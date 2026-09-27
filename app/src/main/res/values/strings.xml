@@ -1,6 +1,19 @@
 <resources>
     <string name="auto_activate_five_hour">Activate the next 5-hour window</string>
-    <string name="auto_activate_five_hour_summary">Send one small Codex request after reset. Uses quota; requires a fresh OAuth login and network. Android may delay background work. Off by default.</string>
+    <string name="auto_activate_five_hour_summary">Choose accounts for one small Codex request after reset. Uses quota and requires network; older accounts may need OAuth sign-in again. Android may delay background work. Off by default.</string>
+    <string name="auto_activate_five_hour_no_accounts">Add a ChatGPT account to choose automatic activation.</string>
+    <string name="activate_five_hour_now">Activate 5-hour quota now</string>
+    <string name="activate_five_hour_confirm_title">Activate the 5-hour window?</string>
+    <string name="activate_five_hour_confirm_message">This sends one real Codex request and uses a small amount of quota. You can try only once per reset window to avoid duplicate usage.</string>
+    <string name="activate_five_hour_confirm_action">Send request</string>
+    <string name="activate_five_hour_success_title">5-hour window activated</string>
+    <string name="activate_five_hour_success_message">Codex completed the request. The latest official quota is shown below.</string>
+    <string name="activate_five_hour_refresh_pending">Codex completed the request, but the quota refresh failed. Refresh again later.</string>
+    <string name="activate_five_hour_not_due">The 5-hour reset is not due, or this window has already ended.</string>
+    <string name="activate_five_hour_login_required">Sign in with OAuth again before activating this account.</string>
+    <string name="activate_five_hour_already_attempted">A request was already attempted for this reset window. No second request was sent.</string>
+    <string name="activate_five_hour_refresh_failed">Could not refresh the account before sending. Check your connection and try again.</string>
+    <string name="activate_five_hour_uncertain">The request result is uncertain. No automatic retry will be sent for this window to avoid duplicate usage.</string>
     <string name="codex_usage_title">Codex Usage</string>
     <string name="gpt_reserve">GPT Reserve</string>
     <string name="official_credit">Official Credit</string>

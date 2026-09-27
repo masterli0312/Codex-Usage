@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.codex.quota.domain.model.AppThemeMode
+import com.codex.quota.domain.model.AccountWithUsage
 import com.codex.quota.domain.model.RefreshIntervalMinutes
 import com.codex.quota.domain.model.UserPreferences
 import com.codex.quota.domain.model.WidgetThemeMode
@@ -27,6 +28,9 @@ class SettingsViewModel(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = UserPreferences()
         )
+
+    val accountsState: StateFlow<List<AccountWithUsage>> = accountRepository.observeAccounts()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun setThemeMode(mode: AppThemeMode) {
         viewModelScope.launch {
@@ -67,9 +71,15 @@ class SettingsViewModel(
         }
     }
 
-    fun setAutoActivateFiveHourEnabled(enabled: Boolean) {
+    fun setAutoActivateFiveHourAccount(context: Context, accountId: String, enabled: Boolean) {
         viewModelScope.launch {
-            preferencesRepository.setAutoActivateFiveHourEnabled(enabled)
+            preferencesRepository.setAutoActivateFiveHourAccount(accountId, enabled)
+            if (enabled && preferencesRepository.getPreferences().backgroundSyncEnabled) {
+                val account = accountRepository.getAccount(accountId)
+                WorkScheduler.scheduleFiveHourResetRefresh(
+                    context, accountId, account?.usage?.fiveHourResetAtEpochMs
+                )
+            }
         }
     }
 
@@ -126,7 +136,11 @@ class SettingsViewModel(
 
     fun clearAllData() {
         viewModelScope.launch {
-            accountRepository.clearAllData()
+            if (accountRepository.clearAllData().isSuccess) {
+                preferencesRepository.getPreferences().autoActivateFiveHourAccountIds.forEach { accountId ->
+                    preferencesRepository.setAutoActivateFiveHourAccount(accountId, false)
+                }
+            }
         }
     }
 }

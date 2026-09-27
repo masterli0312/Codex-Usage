@@ -16,6 +16,7 @@ import com.codex.quota.domain.model.RefreshIntervalMinutes
 import com.codex.quota.domain.model.UserPreferences
 import com.codex.quota.domain.model.WidgetThemeMode
 import com.codex.quota.domain.repository.ResetOperationStore
+import com.codex.quota.domain.repository.FiveHourActivationStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -23,10 +24,10 @@ import java.util.UUID
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_settings")
 
-class DataStoreManager(private val context: Context) : ResetOperationStore {
+class DataStoreManager(private val context: Context) : ResetOperationStore, FiveHourActivationStore {
 
     /** Claim before the billable request. An uncertain network result is never retried automatically. */
-    suspend fun claimFiveHourActivation(accountId: String, resetAtEpochMs: Long): Boolean {
+    override suspend fun claimFiveHourActivation(accountId: String, resetAtEpochMs: Long): Boolean {
         val key = longPreferencesKey("five_hour_activation_" + accountId)
         var claimed = false
         context.dataStore.edit { prefs ->
@@ -59,7 +60,7 @@ class DataStoreManager(private val context: Context) : ResetOperationStore {
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         val WIDGET_THEME_MODE = stringPreferencesKey("widget_theme_mode")
         val BACKGROUND_SYNC_ENABLED = booleanPreferencesKey("background_sync_enabled")
-        val AUTO_ACTIVATE_FIVE_HOUR = booleanPreferencesKey("auto_activate_five_hour")
+        val AUTO_ACTIVATE_FIVE_HOUR_ACCOUNTS = stringSetPreferencesKey("auto_activate_five_hour_accounts")
         val REFRESH_INTERVAL = longPreferencesKey("refresh_interval_minutes")
         val REFRESH_ON_APP_OPEN = booleanPreferencesKey("refresh_on_app_open")
         val SIGNED_OUT_NOTIFICATIONS = booleanPreferencesKey("signed_out_notifications_enabled")
@@ -93,7 +94,7 @@ class DataStoreManager(private val context: Context) : ResetOperationStore {
             dynamicColor = prefs[PreferencesKeys.DYNAMIC_COLOR] ?: true,
             widgetThemeMode = widgetThemeMode,
             backgroundSyncEnabled = prefs[PreferencesKeys.BACKGROUND_SYNC_ENABLED] ?: true,
-            autoActivateFiveHourEnabled = prefs[PreferencesKeys.AUTO_ACTIVATE_FIVE_HOUR] ?: false,
+            autoActivateFiveHourAccountIds = prefs[PreferencesKeys.AUTO_ACTIVATE_FIVE_HOUR_ACCOUNTS] ?: emptySet(),
             refreshInterval = RefreshIntervalMinutes.fromMinutes(refreshIntervalMinutes),
             refreshOnAppOpen = prefs[PreferencesKeys.REFRESH_ON_APP_OPEN] ?: true,
             signedOutNotificationsEnabled = prefs[PreferencesKeys.SIGNED_OUT_NOTIFICATIONS] ?: true,
@@ -133,9 +134,11 @@ class DataStoreManager(private val context: Context) : ResetOperationStore {
         }
     }
 
-    suspend fun setAutoActivateFiveHourEnabled(enabled: Boolean) {
+    suspend fun setAutoActivateFiveHourAccount(accountId: String, enabled: Boolean) {
         context.dataStore.edit { prefs ->
-            prefs[PreferencesKeys.AUTO_ACTIVATE_FIVE_HOUR] = enabled
+            val current = prefs[PreferencesKeys.AUTO_ACTIVATE_FIVE_HOUR_ACCOUNTS] ?: emptySet()
+            prefs[PreferencesKeys.AUTO_ACTIVATE_FIVE_HOUR_ACCOUNTS] =
+                if (enabled) current + accountId else current - accountId
         }
     }
 

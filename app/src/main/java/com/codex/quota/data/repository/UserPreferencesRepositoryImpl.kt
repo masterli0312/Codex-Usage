@@ -35,8 +35,8 @@ class UserPreferencesRepositoryImpl(
         dataStoreManager.setBackgroundSyncEnabled(enabled)
     }
 
-    override suspend fun setAutoActivateFiveHourEnabled(enabled: Boolean) {
-        dataStoreManager.setAutoActivateFiveHourEnabled(enabled)
+    override suspend fun setAutoActivateFiveHourAccount(accountId: String, enabled: Boolean) {
+        dataStoreManager.setAutoActivateFiveHourAccount(accountId, enabled)
     }
 
     override suspend fun setRefreshInterval(interval: RefreshIntervalMinutes) {

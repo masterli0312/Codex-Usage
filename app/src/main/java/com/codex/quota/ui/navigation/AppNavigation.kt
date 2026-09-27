@@ -161,6 +161,7 @@ fun AppNavigation(
                         repository = app.repository,
                         preferencesRepository = app.preferencesRepository,
                         consumeResetCredit = app.consumeResetCredit,
+                        activateFiveHourWindow = app.activateFiveHourWindow,
                         refreshAccountUseCase = RefreshAccountUseCase(app.repository),
                         updateAccountUseCase = UpdateAccountUseCase(app.repository),
                         removeAccountUseCase = RemoveAccountUseCase(app.repository)

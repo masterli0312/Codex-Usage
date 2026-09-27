@@ -12,6 +12,8 @@ import com.codex.quota.data.repository.UserPreferencesRepositoryImpl
 import com.codex.quota.domain.repository.CodexAccountRepository
 import com.codex.quota.domain.repository.UserPreferencesRepository
 import com.codex.quota.domain.usecase.ConsumeResetCreditUseCase
+import com.codex.quota.domain.usecase.ActivateFiveHourWindowUseCase
+import com.codex.quota.data.remote.CodexWindowActivator
 import com.codex.quota.security.EncryptedCredentialStore
 import com.codex.quota.security.KeystoreManager
 import com.codex.quota.worker.WorkScheduler
@@ -44,6 +46,9 @@ class CodexQuotaApplication : Application() {
     lateinit var consumeResetCredit: ConsumeResetCreditUseCase
         private set
 
+    lateinit var activateFiveHourWindow: ActivateFiveHourWindowUseCase
+        private set
+
     override fun onCreate() {
         super.onCreate()
 
@@ -74,6 +79,9 @@ class CodexQuotaApplication : Application() {
 
         preferencesRepository = UserPreferencesRepositoryImpl(dataStoreManager)
         consumeResetCredit = ConsumeResetCreditUseCase(repository, credentialStore, dataStoreManager, WhamResetCreditConsumer())
+        activateFiveHourWindow = ActivateFiveHourWindowUseCase(
+            repository, credentialStore, dataStoreManager, CodexWindowActivator()
+        )
 
         // Restore one-time reset refreshes from persisted official window timestamps.
         applicationScope.launch {

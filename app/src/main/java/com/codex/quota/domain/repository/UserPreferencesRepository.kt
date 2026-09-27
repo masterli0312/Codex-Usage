@@ -14,7 +14,7 @@ interface UserPreferencesRepository {
     suspend fun setDynamicColor(enabled: Boolean)
     suspend fun setWidgetThemeMode(mode: WidgetThemeMode)
     suspend fun setBackgroundSyncEnabled(enabled: Boolean)
-    suspend fun setAutoActivateFiveHourEnabled(enabled: Boolean)
+    suspend fun setAutoActivateFiveHourAccount(accountId: String, enabled: Boolean)
     suspend fun setRefreshInterval(interval: RefreshIntervalMinutes)
     suspend fun setRefreshOnAppOpen(enabled: Boolean)
     suspend fun setSignedOutNotificationsEnabled(enabled: Boolean)

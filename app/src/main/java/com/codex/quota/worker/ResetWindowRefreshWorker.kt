@@ -4,9 +4,7 @@ import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.codex.quota.CodexQuotaApplication
-import com.codex.quota.auth.JwtTokenParser
-import com.codex.quota.data.remote.CodexWindowActivator
-import com.codex.quota.domain.model.AuthStatus
+import com.codex.quota.domain.usecase.FiveHourActivationOutcome
 import com.codex.quota.widget.WidgetUpdateHelper
 
 /** Reads official usage shortly after the known five-hour window boundary. */
@@ -26,25 +24,15 @@ class ResetWindowRefreshWorker(
         if (current.account.isDemoAccount || resetAt > System.currentTimeMillis() ||
             System.currentTimeMillis() - resetAt >= FIVE_HOURS_MS) return Result.success()
 
-        val refreshed = app.repository.refreshAccount(accountId)
-        if (refreshed.isFailure) return Result.retry()
-
-        if (preferences.autoActivateFiveHourEnabled &&
-            refreshed.getOrThrow().status == AuthStatus.AUTHENTICATED &&
-            System.currentTimeMillis() - resetAt < FIVE_HOURS_MS &&
-            app.credentialStore.getRefreshToken(accountId) != null &&
-            app.preferencesRepository.getPreferences().autoActivateFiveHourEnabled
-        ) {
-            val accessToken = app.credentialStore.getApiKey(accountId)
-            val chatgptAccountId = accessToken?.let(JwtTokenParser::parseToken)?.chatgptAccountId
-            if (accessToken != null && chatgptAccountId != null &&
-                app.dataStoreManager.claimFiveHourActivation(accountId, resetAt)
-            ) {
-                // The claim is durable before sending. A timeout may have reached the server;
-                // therefore no automatic retry follows an uncertain response.
-                CodexWindowActivator().activate(accessToken, chatgptAccountId)
-                app.repository.refreshAccount(accountId)
+        if (accountId in preferences.autoActivateFiveHourAccountIds) {
+            val outcome = app.activateFiveHourWindow(accountId, resetAt) {
+                app.preferencesRepository.getPreferences().let {
+                    it.backgroundSyncEnabled && accountId in it.autoActivateFiveHourAccountIds
+                }
             }
+            if (outcome == FiveHourActivationOutcome.RefreshFailed) return Result.retry()
+        } else if (app.repository.refreshAccount(accountId).isFailure) {
+            return Result.retry()
         }
         WidgetUpdateHelper.updateAllWidgets(applicationContext)
         return Result.success()

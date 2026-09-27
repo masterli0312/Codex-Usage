@@ -29,7 +29,10 @@ import androidx.core.os.LocaleListCompat
 import com.codex.quota.R
 import com.codex.quota.domain.model.AppThemeMode
 import com.codex.quota.domain.model.RefreshIntervalMinutes
+import com.codex.quota.domain.model.isApiKeyPlan
 import com.codex.quota.ui.theme.Red500
+import com.codex.quota.ui.util.localizedAccountNickname
+import com.codex.quota.ui.util.localizedShortPlanName
 
 private data class SettingEntry(val page: String, val title: Int, val subtitle: Int, val icon: String)
 
@@ -46,6 +49,7 @@ private val entries = listOf(
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel, modifier: Modifier = Modifier, page: String = "home", onNavigate: (String) -> Unit = {}, onNavigateBack: () -> Unit = {}) {
     val preferences by viewModel.preferencesState.collectAsState()
+    val accounts by viewModel.accountsState.collectAsState()
     val context = LocalContext.current
     var showClearData by remember { mutableStateOf(false) }
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
@@ -85,7 +89,21 @@ fun SettingsScreen(viewModel: SettingsViewModel, modifier: Modifier = Modifier, 
                 }
                 "sync" -> {
                     ToggleRow(stringResource(R.string.periodic_background_sync), stringResource(R.string.app_wakes_periodically_in_background_to_refresh_quotas), preferences.backgroundSyncEnabled, { viewModel.setBackgroundSyncEnabled(context, it) })
-                    ToggleRow(stringResource(R.string.auto_activate_five_hour), stringResource(R.string.auto_activate_five_hour_summary), preferences.autoActivateFiveHourEnabled, viewModel::setAutoActivateFiveHourEnabled, enabled = preferences.backgroundSyncEnabled)
+                    Text(stringResource(R.string.auto_activate_five_hour), fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 14.dp))
+                    Text(stringResource(R.string.auto_activate_five_hour_summary), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    val subscriberAccounts = accounts.filter { !it.account.isDemoAccount && !it.account.planType.isApiKeyPlan }
+                    if (subscriberAccounts.isEmpty()) {
+                        Text(stringResource(R.string.auto_activate_five_hour_no_accounts), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    subscriberAccounts.forEach { item ->
+                        ToggleRow(
+                            localizedAccountNickname(context, item.account),
+                            localizedShortPlanName(context, item.account.planType),
+                            item.account.id in preferences.autoActivateFiveHourAccountIds,
+                            { enabled -> viewModel.setAutoActivateFiveHourAccount(context, item.account.id, enabled) },
+                            enabled = preferences.backgroundSyncEnabled
+                        )
+                    }
                     Text(stringResource(R.string.refresh_frequency), fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 14.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         listOf(RefreshIntervalMinutes.MINUTES_15, RefreshIntervalMinutes.MINUTES_30, RefreshIntervalMinutes.HOURS_1, RefreshIntervalMinutes.HOURS_3).forEach { interval ->

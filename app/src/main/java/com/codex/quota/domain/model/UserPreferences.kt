@@ -36,7 +36,7 @@ data class UserPreferences(
     val dynamicColor: Boolean = true,
     val widgetThemeMode: WidgetThemeMode = WidgetThemeMode.DARK_OBSIDIAN,
     val backgroundSyncEnabled: Boolean = true,
-    val autoActivateFiveHourEnabled: Boolean = false,
+    val autoActivateFiveHourAccountIds: Set<String> = emptySet(),
     val refreshInterval: RefreshIntervalMinutes = RefreshIntervalMinutes.MINUTES_30,
     val refreshOnAppOpen: Boolean = true,
     val signedOutNotificationsEnabled: Boolean = true,
