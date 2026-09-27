@@ -6,7 +6,7 @@
 
 *功能展示图由 AI 生成；图中额度数值、账号及按钮状态仅作示意，实际界面与服务端数据为准。*
 
-[下载 1.0.1 测试版](https://github.com/masterli0312/Codex-Usage/releases/tag/apk-1.0.1-debug-r2) · [查看全部版本](https://github.com/masterli0312/Codex-Usage/releases) · [上游项目](https://github.com/boudywho/codex-quota-android)
+[下载 1.0.1 更新测试版](https://github.com/masterli0312/Codex-Usage/releases/tag/apk-1.0.1-debug-r3) · [查看全部版本](https://github.com/masterli0312/Codex-Usage/releases) · [上游项目](https://github.com/boudywho/codex-quota-android)
 
 > 当前公开的 APK 是 **1.0.1 调试签名测试版**，需要 Android 8.0 或更高版本。安装前请阅读[安装与升级](#安装与升级)。
 
@@ -64,7 +64,7 @@
 **刷新**会重新读取服务端额度；**激活**会在旧的 5 小时窗口到期后发送一次小型 Codex 请求，以启动新窗口。激活会消耗少量额度。
 
 - **手动激活**：在账号详情页点击“立即激活 5 小时额度”并确认。按钮只在旧窗口到期且新窗口尚未开始时可用。新窗口即使显示 **100%**，只要服务端返回未来的重置时间，按钮也会禁用。
-- **自动激活**：在“设置 → 后台同步”开启定期同步，再逐个账号选择。默认没有账号开启自动激活。
+- **自动激活**：在“设置 → 后台同步”开启定期同步，再逐个账号选择。默认没有账号开启自动激活。重置时间已过后重新开启某账号的自动激活，会补排一次激活检查。
 - **防重复**：请求发送前会重新读取额度；若自动激活已使新窗口开始，手动操作不会再发送请求。对同一账号、同一窗口还会在本地记录一次请求，网络结果不确定时不会自动重复消费。
 
 Android 的后台任务可能延迟，自动激活不能保证在重置瞬间执行。激活结果以服务端返回的额度和重置时间为准。
@@ -85,11 +85,11 @@ Android 的后台任务可能延迟，自动激活不能保证在重置瞬间执
 
 ## 安装与升级
 
-1. 从 [当前 1.0.1 测试版页面](https://github.com/masterli0312/Codex-Usage/releases/tag/apk-1.0.1-debug-r2) 下载 `Codex-Usage-v1.0.1-debug.apk`。
+1. 从 [当前 1.0.1 更新测试版页面](https://github.com/masterli0312/Codex-Usage/releases/tag/apk-1.0.1-debug-r3) 下载 `Codex-Usage-v1.0.1-debug-r3.apk`。
 2. 在 Android 8.0（API 26）或更新系统上打开 APK，按提示允许该来源安装。
 3. 首次打开后添加账号，并按需授予通知权限。
 
-当前 APK 为**调试签名测试包**，包名 `com.codex.quota.debug`，显示版本 **1.0.1**，内部版本号 **23**。只有包名和签名均相同、且内部版本号更低的测试包可以直接覆盖安装。其他签名的 APK 不能覆盖；卸载旧版会清除该应用在本机保存的账号、登录凭据和设置。请以 GitHub Release 中的 APK 作为本测试版的安装来源。
+当前 APK 为**调试签名测试包**，包名 `com.codex.quota.debug`，显示版本 **1.0.1**，内部版本号 **24**。它与上一版公开测试包使用相同签名，可直接覆盖安装并保留本机数据。其他签名的 APK 不能覆盖；卸载旧版会清除该应用在本机保存的账号、登录凭据和设置。请以 GitHub Release 中的 APK 作为本测试版的安装来源。
 
 ## 隐私与安全
 
@@ -158,7 +158,7 @@ Codex Usage is an Android app for viewing server-reported quota status across mu
 
 Manual activation sends a small Codex request after a 5-hour window expires. Per-account automatic activation is opt-in and depends on Android background scheduling. The app stores credentials locally with Android Keystore-backed encryption and connects directly to OpenAI over HTTPS. It does **not** collect Token usage logs, estimate dollar balances or use a relay server.
 
-Download the [1.0.1 debug test APK](https://github.com/masterli0312/Codex-Usage/releases/tag/apk-1.0.1-debug-r2). It requires Android 8.0+ and uses package `com.codex.quota.debug`. The Chinese sections above include installation, upgrade, build and signing instructions.
+Download the [updated 1.0.1 debug test APK](https://github.com/masterli0312/Codex-Usage/releases/tag/apk-1.0.1-debug-r3). It requires Android 8.0+ and uses package `com.codex.quota.debug`. The Chinese sections above include installation, upgrade, build and signing instructions.
 
 ## 许可与声明
 

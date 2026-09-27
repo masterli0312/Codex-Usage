@@ -32,8 +32,9 @@ class ActivateFiveHourWindowUseCase(
     ): FiveHourActivationOutcome {
         val account = repository.getAccount(accountId) ?: return FiveHourActivationOutcome.NotDue
         val now = System.currentTimeMillis()
-        if (account.account.isDemoAccount || resetAtEpochMs <= 0L || resetAtEpochMs > now ||
-            now - resetAtEpochMs >= FIVE_HOURS_MS) return FiveHourActivationOutcome.NotDue
+        if (account.account.isDemoAccount || resetAtEpochMs <= 0L || resetAtEpochMs > now) {
+            return FiveHourActivationOutcome.NotDue
+        }
 
         val refreshed = repository.refreshAccount(accountId)
         if (refreshed.isFailure) return FiveHourActivationOutcome.RefreshFailed
@@ -72,9 +73,5 @@ class ActivateFiveHourWindowUseCase(
         val freshUsage = repository.refreshAccount(accountId).getOrNull()
         return if (activation.isSuccess) FiveHourActivationOutcome.Success(freshUsage)
         else FiveHourActivationOutcome.Uncertain
-    }
-
-    private companion object {
-        const val FIVE_HOURS_MS = 5 * 60 * 60_000L
     }
 }

@@ -21,8 +21,9 @@ class ResetWindowRefreshWorker(
         val accountId = inputData.getString(ACCOUNT_ID) ?: return Result.failure()
         val resetAt = inputData.getLong(RESET_AT, 0L)
         val current = app.repository.getAccount(accountId) ?: return Result.success()
-        if (current.account.isDemoAccount || resetAt > System.currentTimeMillis() ||
-            System.currentTimeMillis() - resetAt >= FIVE_HOURS_MS) return Result.success()
+        if (current.account.isDemoAccount || resetAt <= 0L || resetAt > System.currentTimeMillis()) {
+            return Result.success()
+        }
 
         if (accountId in preferences.autoActivateFiveHourAccountIds) {
             val outcome = app.activateFiveHourWindow(accountId, resetAt) {
@@ -39,7 +40,6 @@ class ResetWindowRefreshWorker(
     }
 
     companion object {
-        private const val FIVE_HOURS_MS = 5 * 60 * 60_000L
         const val ACCOUNT_ID = "account_id"
         const val RESET_AT = "reset_at"
     }

@@ -62,6 +62,17 @@ class ActivateFiveHourWindowUseCaseTest {
     }
 
     @Test
+    fun inactiveWindowCanBeActivatedAfterMoreThanFiveHours() = runTest {
+        val oldResetAt = System.currentTimeMillis() - 6 * 60 * 60_000L
+        val activator = mockk<CodexWindowActivator>()
+        coEvery { activator.activate("token", "chatgpt-account") } returns Result.success(Unit)
+        val useCase = createUseCase(activator)
+
+        assertTrue(useCase(accountId, oldResetAt) is FiveHourActivationOutcome.Success)
+        coVerify(exactly = 1) { activator.activate("token", "chatgpt-account") }
+    }
+
+    @Test
     fun refreshedActiveWindowDoesNotSendAnotherRequest() = runTest {
         val activator = mockk<CodexWindowActivator>()
         val activeUsage = usage.copy(
@@ -72,6 +83,17 @@ class ActivateFiveHourWindowUseCaseTest {
         val useCase = createUseCase(activator, activeUsage)
 
         assertEquals(FiveHourActivationOutcome.NotDue, useCase(accountId, resetAt))
+        coVerify(exactly = 0) { activator.activate(any(), any()) }
+    }
+
+    @Test
+    fun overdueWindowThatAlreadyRolledOverDoesNotSendRequest() = runTest {
+        val oldResetAt = System.currentTimeMillis() - 6 * 60 * 60_000L
+        val activeUsage = usage.copy(fiveHourResetAtEpochMs = System.currentTimeMillis() + 4 * 60 * 60_000L)
+        val activator = mockk<CodexWindowActivator>()
+        val useCase = createUseCase(activator, activeUsage)
+
+        assertEquals(FiveHourActivationOutcome.NotDue, useCase(accountId, oldResetAt))
         coVerify(exactly = 0) { activator.activate(any(), any()) }
     }
 

@@ -22,9 +22,13 @@ class FiveHourActivationAvailabilityTest {
     }
 
     @Test
-    fun unknownOrStaleWindowCannotBeActivated() {
+    fun inactiveWindowCanStillBeActivatedMoreThanFiveHoursAfterReset() {
+        assertTrue(canActivateFiveHourWindow(usageWithReset(now - 6 * 60 * 60_000L), now))
+    }
+
+    @Test
+    fun unknownOrUnauthenticatedWindowCannotBeActivated() {
         assertFalse(canActivateFiveHourWindow(usageWithReset(null), now))
-        assertFalse(canActivateFiveHourWindow(usageWithReset(now - 5 * 60 * 60_000L), now))
         assertFalse(canActivateFiveHourWindow(usageWithReset(now - 60_000L).copy(status = AuthStatus.OFFLINE), now))
     }
 

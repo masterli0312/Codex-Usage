@@ -55,12 +55,13 @@ class SettingsViewModel(
         viewModelScope.launch {
             preferencesRepository.setBackgroundSyncEnabled(enabled)
             if (enabled) {
-                val currentInterval = preferencesState.value.refreshInterval.minutes
-                WorkScheduler.schedulePeriodicRefresh(context, currentInterval)
+                val preferences = preferencesRepository.getPreferences()
+                WorkScheduler.schedulePeriodicRefresh(context, preferences.refreshInterval.minutes)
                 accountRepository.getAllAccounts().forEach { item ->
                     if (!item.account.isDemoAccount) {
                         WorkScheduler.scheduleFiveHourResetRefresh(
-                            context, item.account.id, item.usage?.fiveHourResetAtEpochMs
+                            context, item.account.id, item.usage?.fiveHourResetAtEpochMs,
+                            includeOverdue = item.account.id in preferences.autoActivateFiveHourAccountIds
                         )
                     }
                 }
@@ -77,7 +78,8 @@ class SettingsViewModel(
             if (enabled && preferencesRepository.getPreferences().backgroundSyncEnabled) {
                 val account = accountRepository.getAccount(accountId)
                 WorkScheduler.scheduleFiveHourResetRefresh(
-                    context, accountId, account?.usage?.fiveHourResetAtEpochMs
+                    context, accountId, account?.usage?.fiveHourResetAtEpochMs,
+                    includeOverdue = true
                 )
             }
         }

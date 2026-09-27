@@ -7,5 +7,5 @@ import com.codex.quota.domain.model.CodexUsage
 internal fun canActivateFiveHourWindow(usage: CodexUsage?, now: Long): Boolean {
     if (usage?.status != AuthStatus.AUTHENTICATED) return false
     val resetAt = usage.fiveHourResetAtEpochMs ?: return false
-    return resetAt > 0L && resetAt <= now && now - resetAt < 5 * 60 * 60_000L
+    return resetAt > 0L && resetAt <= now
 }

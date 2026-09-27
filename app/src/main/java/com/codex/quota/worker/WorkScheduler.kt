@@ -40,9 +40,15 @@ object WorkScheduler {
         WorkManager.getInstance(context).cancelAllWorkByTag(RESET_REMINDER_TAG)
     }
 
-    fun scheduleFiveHourResetRefresh(context: Context, accountId: String, resetAtEpochMs: Long?) {
+    fun scheduleFiveHourResetRefresh(
+        context: Context,
+        accountId: String,
+        resetAtEpochMs: Long?,
+        includeOverdue: Boolean = false
+    ) {
         val now = System.currentTimeMillis()
-        if (resetAtEpochMs == null || resetAtEpochMs <= now) return
+        if (resetAtEpochMs == null || resetAtEpochMs <= 0L ||
+            (resetAtEpochMs <= now && !includeOverdue)) return
 
         val request = OneTimeWorkRequestBuilder<ResetWindowRefreshWorker>()
             .setInitialDelay((resetAtEpochMs - now + 30_000L).coerceAtLeast(0L), TimeUnit.MILLISECONDS)
