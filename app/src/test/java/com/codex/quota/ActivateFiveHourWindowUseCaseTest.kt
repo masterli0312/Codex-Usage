@@ -61,10 +61,27 @@ class ActivateFiveHourWindowUseCaseTest {
         coVerify(exactly = 1) { activator.activate("token", "chatgpt-account") }
     }
 
-    private fun createUseCase(activator: CodexWindowActivator): ActivateFiveHourWindowUseCase {
+    @Test
+    fun refreshedActiveWindowDoesNotSendAnotherRequest() = runTest {
+        val activator = mockk<CodexWindowActivator>()
+        val activeUsage = usage.copy(
+            fiveHourResetAtEpochMs = System.currentTimeMillis() + 4 * 60 * 60_000L,
+            fiveHourRemainingPercent = 100.0,
+            fiveHourUsedPercent = 0.0
+        )
+        val useCase = createUseCase(activator, activeUsage)
+
+        assertEquals(FiveHourActivationOutcome.NotDue, useCase(accountId, resetAt))
+        coVerify(exactly = 0) { activator.activate(any(), any()) }
+    }
+
+    private fun createUseCase(
+        activator: CodexWindowActivator,
+        refreshedUsage: CodexUsage = usage
+    ): ActivateFiveHourWindowUseCase {
         val repository = mockk<CodexAccountRepository>()
         coEvery { repository.getAccount(accountId) } returns AccountWithUsage(account, usage)
-        coEvery { repository.refreshAccount(accountId) } returns Result.success(usage)
+        coEvery { repository.refreshAccount(accountId) } returns Result.success(refreshedUsage)
         val credentialStore = mockk<CredentialStore>()
         every { credentialStore.getApiKey(accountId) } returns "token"
         mockkObject(JwtTokenParser)

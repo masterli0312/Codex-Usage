@@ -17,7 +17,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.codex.quota.R
-import com.codex.quota.domain.model.AuthStatus
 import com.codex.quota.domain.usecase.FiveHourActivationOutcome
 import com.codex.quota.domain.usecase.ResetSpendOutcome
 import com.codex.quota.ui.components.CircularQuotaGauge
@@ -51,13 +50,8 @@ fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () ->
     val context = LocalContext.current
     val now = rememberQuotaClock()
     val fiveHourResetAt = usage?.fiveHourResetAtEpochMs
-    val fiveHourBoundary = fiveHourResetAt?.let { if (it > now) it - 5 * 60 * 60_000L else it }
-    val unusedFiveHourWindow = (usage?.fiveHourRemainingPercent ?: 0.0) >= 99.5 ||
-        (usage?.fiveHourUsedPercent?.let { it <= 0.5 } == true)
     val canActivateFiveHour = account?.isDemoAccount == false &&
-        usage?.status == AuthStatus.AUTHENTICATED && fiveHourBoundary != null &&
-        fiveHourBoundary > 0L && fiveHourBoundary <= now &&
-        now - fiveHourBoundary < 5 * 60 * 60_000L && unusedFiveHourWindow
+        canActivateFiveHourWindow(usage, now)
     val renewalDate = usage?.subscriptionRenewalEpochMs?.takeIf { it > 0L }
         ?: account?.customRenewalDateEpochMs?.takeIf { it > 0L }
     Scaffold(modifier = modifier.fillMaxSize(), topBar = {
@@ -126,8 +120,8 @@ fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () ->
         text = { Text(stringResource(R.string.activate_five_hour_confirm_message)) },
         confirmButton = { Button(onClick = {
             showFiveHourActivation = false
-            fiveHourBoundary?.let(viewModel::activateFiveHour)
-        }, enabled = canActivateFiveHour && !activatingFiveHour) { Text(stringResource(R.string.activate_five_hour_confirm_action)) } },
+            fiveHourResetAt?.let(viewModel::activateFiveHour)
+        }, enabled = canActivateFiveHour && !activatingFiveHour && !refreshing && !resetting) { Text(stringResource(R.string.activate_five_hour_confirm_action)) } },
         dismissButton = { TextButton(onClick = { showFiveHourActivation = false }) { Text(stringResource(R.string.action_cancel)) } }
     )
     when (val outcome = fiveHourActivationOutcome) {

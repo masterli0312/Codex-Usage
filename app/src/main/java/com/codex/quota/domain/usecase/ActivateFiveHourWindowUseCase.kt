@@ -37,8 +37,13 @@ class ActivateFiveHourWindowUseCase(
 
         val refreshed = repository.refreshAccount(accountId)
         if (refreshed.isFailure) return FiveHourActivationOutcome.RefreshFailed
-        if (refreshed.getOrThrow().status != AuthStatus.AUTHENTICATED) {
+        val usageBeforeActivation = refreshed.getOrThrow()
+        if (usageBeforeActivation.status != AuthStatus.AUTHENTICATED) {
             return FiveHourActivationOutcome.LoginRequired
+        }
+        // A newer reset timestamp means this window has already rolled over and started.
+        if (usageBeforeActivation.fiveHourResetAtEpochMs?.let { it > resetAtEpochMs } == true) {
+            return FiveHourActivationOutcome.NotDue
         }
 
         val token = credentialStore.getApiKey(accountId) ?: return FiveHourActivationOutcome.LoginRequired
