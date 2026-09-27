@@ -33,7 +33,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalContext
 import com.codex.quota.R
-import com.codex.quota.ui.util.localizedPlanName
+import com.codex.quota.ui.util.localizedAccountNickname
+import com.codex.quota.ui.util.localizedShortPlanName
 import androidx.lifecycle.lifecycleScope
 import com.codex.quota.CodexQuotaApplication
 import com.codex.quota.domain.model.AccountWithUsage
@@ -117,12 +118,12 @@ class WidgetConfigActivity : AppCompatActivity() {
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = item.account.nickname,
+                        text = localizedAccountNickname(LocalContext.current, item.account),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = localizedPlanName(LocalContext.current, item.account.planType),
+                        text = localizedShortPlanName(LocalContext.current, item.account.planType),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

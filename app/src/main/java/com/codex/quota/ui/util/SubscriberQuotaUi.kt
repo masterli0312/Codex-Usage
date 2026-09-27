@@ -77,6 +77,18 @@ fun localizedPlanName(context: Context, planType: PlanType): String = context.ge
     }
 )
 
+fun localizedShortPlanName(context: Context, planType: PlanType): String = context.getString(
+    when (planType) {
+        PlanType.PLUS -> R.string.plan_short_plus
+        PlanType.TEAM -> R.string.plan_short_team
+        PlanType.ENTERPRISE -> R.string.plan_short_enterprise
+        PlanType.API_TIER_1 -> R.string.plan_short_api_tier_1
+        PlanType.API_TIER_2 -> R.string.plan_short_api_tier_2
+        PlanType.API_TIER_5 -> R.string.plan_short_api_tier_5
+        PlanType.MOCK_DEMO -> R.string.plan_short_demo
+    }
+)
+
 fun localizedResetDuration(context: Context, duration: String?): String? {
     val milliseconds = ParsedRateLimits.parseDurationToMillis(duration) ?: return duration
     val now = System.currentTimeMillis()

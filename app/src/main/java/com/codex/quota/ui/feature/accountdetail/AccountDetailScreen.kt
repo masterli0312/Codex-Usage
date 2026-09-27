@@ -24,7 +24,9 @@ import com.codex.quota.ui.components.RelativeTimeText
 import com.codex.quota.ui.components.StatusBadge
 import com.codex.quota.ui.components.rememberQuotaClock
 import com.codex.quota.ui.util.formatQuotaPercent
+import com.codex.quota.ui.util.localizedAccountNickname
 import com.codex.quota.ui.util.localizedPlanName
+import com.codex.quota.ui.util.localizedShortPlanName
 import java.text.DateFormat
 import java.util.Date
 
@@ -41,14 +43,15 @@ fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () ->
     LaunchedEffect(deleted) { if (deleted) onNavigateBack() }
     val account = data?.account
     val usage = data?.usage
+    val context = LocalContext.current
     val now = rememberQuotaClock()
     val renewalDate = usage?.subscriptionRenewalEpochMs?.takeIf { it > 0L }
         ?: account?.customRenewalDateEpochMs?.takeIf { it > 0L }
     Scaffold(modifier = modifier.fillMaxSize(), topBar = {
         TopAppBar(title = {
             Column {
-                Text(account?.nickname ?: stringResource(R.string.account_details), fontWeight = FontWeight.Bold)
-                if (account != null) Text(localizedPlanName(LocalContext.current, account.planType), style = MaterialTheme.typography.labelSmall)
+                Text(account?.let { localizedAccountNickname(context, it) } ?: stringResource(R.string.account_details), fontWeight = FontWeight.Bold)
+                if (account != null) Text(localizedShortPlanName(context, account.planType), style = MaterialTheme.typography.labelSmall)
             }
         }, navigationIcon = { IconButton(onClick = onNavigateBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back)) } }, actions = {
             IconButton(onClick = viewModel::refresh, enabled = !refreshing) { Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.refresh_usage_data)) }
@@ -97,7 +100,7 @@ fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () ->
             }
         }
     }
-    if (showDelete) AlertDialog(onDismissRequest = { showDelete = false }, title = { Text(stringResource(R.string.remove_account)) }, text = { Text(stringResource(R.string.remove_account_message, account?.nickname ?: "")) }, confirmButton = { TextButton(onClick = { showDelete = false; viewModel.deleteAccount() }) { Text(stringResource(R.string.remove_account)) } }, dismissButton = { TextButton(onClick = { showDelete = false }) { Text(stringResource(R.string.action_cancel)) } })
+    if (showDelete) AlertDialog(onDismissRequest = { showDelete = false }, title = { Text(stringResource(R.string.remove_account)) }, text = { Text(stringResource(R.string.remove_account_message, account?.let { localizedAccountNickname(context, it) } ?: "")) }, confirmButton = { TextButton(onClick = { showDelete = false; viewModel.deleteAccount() }) { Text(stringResource(R.string.remove_account)) } }, dismissButton = { TextButton(onClick = { showDelete = false }) { Text(stringResource(R.string.action_cancel)) } })
     if (showReset) AlertDialog(onDismissRequest = { showReset = false }, title = { Text(stringResource(R.string.reset_confirm_title)) }, text = {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.reset_consumes_one))

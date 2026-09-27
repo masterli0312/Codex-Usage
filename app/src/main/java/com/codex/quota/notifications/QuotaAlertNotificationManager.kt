@@ -18,6 +18,7 @@ import com.codex.quota.domain.model.isApiKeyPlan
 import com.codex.quota.ui.MainActivity
 import com.codex.quota.ui.util.isApiKeyQuotaUsage
 import com.codex.quota.ui.util.localizedPlanName
+import com.codex.quota.ui.util.localizedAccountNickname
 import com.codex.quota.ui.util.localizedWindowLabel
 
 fun buildQuotaAlertTitle(
@@ -148,14 +149,14 @@ class QuotaAlertNotificationManager(private val context: Context) {
         val title = buildQuotaAlertTitle(localizedContext, effectiveWindow, isApiKey)
         val contentText = buildQuotaAlertContentText(
             localizedContext,
-            account.nickname,
+            localizedAccountNickname(localizedContext, account),
             remaining,
             effectiveWindow,
             isApiKey
         )
         val bigText = buildQuotaAlertBigText(
             localizedContext,
-            account.nickname,
+            localizedAccountNickname(localizedContext, account),
             planName,
             thresholdPercent,
             remaining,

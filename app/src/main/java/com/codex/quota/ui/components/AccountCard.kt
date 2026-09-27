@@ -17,7 +17,8 @@ import androidx.compose.ui.unit.dp
 import com.codex.quota.R
 import com.codex.quota.domain.model.AccountWithUsage
 import com.codex.quota.domain.model.AuthStatus
-import com.codex.quota.ui.util.localizedPlanName
+import com.codex.quota.ui.util.localizedAccountNickname
+import com.codex.quota.ui.util.localizedShortPlanName
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -27,6 +28,7 @@ import java.util.Locale
 fun AccountCard(item: AccountWithUsage, onClick: () -> Unit, onSignInClick: () -> Unit, modifier: Modifier = Modifier) {
     val account = item.account
     val usage = item.usage
+    val context = LocalContext.current
     val subscriptionDate = usage?.subscriptionRenewalEpochMs?.takeIf { it > 0L }
         ?: account.customRenewalDateEpochMs?.takeIf { it > 0L }
     val now = rememberQuotaClock()
@@ -35,8 +37,8 @@ fun AccountCard(item: AccountWithUsage, onClick: () -> Unit, onSignInClick: () -
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text(account.nickname, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(localizedPlanName(LocalContext.current, account.planType), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(localizedAccountNickname(context, account), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(localizedShortPlanName(context, account.planType), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 StatusBadge(usage?.status ?: account.authStatus)
             }

@@ -42,6 +42,7 @@ import com.codex.quota.domain.model.QuotaWindow
 import com.codex.quota.domain.model.WidgetThemeMode
 import com.codex.quota.ui.MainActivity
 import com.codex.quota.ui.util.formatQuotaPercent
+import com.codex.quota.ui.util.localizedAccountNickname
 import com.codex.quota.ui.util.formatResetCountdown
 import com.codex.quota.ui.util.primarySubscriberQuotaWindow
 
@@ -142,7 +143,7 @@ class SmallQuotaWidget : GlanceAppWidget() {
                         ) {}
                         Spacer(modifier = GlanceModifier.width(6.dp))
                         Text(
-                            text = data.account.nickname,
+                            text = localizedAccountNickname(context, data.account),
                             maxLines = 1,
                             style = TextStyle(color = colors.textPrimary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         )

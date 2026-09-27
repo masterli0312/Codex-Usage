@@ -15,7 +15,6 @@ import com.codex.quota.auth.OAuthTokenResult
 import com.codex.quota.domain.model.CodexAccount
 import com.codex.quota.domain.model.PlanType
 import com.codex.quota.domain.usecase.AddAccountUseCase
-import com.codex.quota.ui.util.localizedPlanName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -91,7 +90,7 @@ class AddAccountViewModel(
                     email = decoded.email ?: state.email,
                     planType = decoded.planType,
                     nickname = if (state.nickname.isBlank() && decoded.email != null) {
-                        localizedPlanName(localizedContext, decoded.planType)
+                        decoded.email.substringBefore('@')
                     } else state.nickname
                 )
             }
@@ -235,11 +234,11 @@ class AddAccountViewModel(
         val defaultNickname = if (_uiState.value.nickname.isNotBlank()) {
             _uiState.value.nickname
         } else if (decoded?.name != null && decoded.name.isNotBlank()) {
-            "${localizedPlanName(localizedContext, decoded.planType)} (${decoded.name})"
+            decoded.name
         } else if (decoded?.email != null) {
-            "${localizedPlanName(localizedContext, decoded.planType)} (${decoded.email.substringBefore('@')})"
+            decoded.email.substringBefore('@')
         } else {
-            localizedPlanName(localizedContext, decoded?.planType ?: PlanType.PLUS)
+            localizedContext.getString(R.string.default_account_nickname)
         }
 
         val addResult = addAccountUseCase(

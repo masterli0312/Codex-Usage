@@ -14,6 +14,7 @@ import com.codex.quota.R
 import com.codex.quota.domain.model.CodexAccount
 import com.codex.quota.ui.MainActivity
 import com.codex.quota.ui.util.localizedPlanName
+import com.codex.quota.ui.util.localizedAccountNickname
 
 class SignedOutNotificationManager(private val context: Context) {
 
@@ -56,10 +57,10 @@ class SignedOutNotificationManager(private val context: Context) {
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle(localizedContext.getString(R.string.auth_notification_title))
-            .setContentText(localizedContext.getString(R.string.auth_notification_text, account.nickname))
+            .setContentText(localizedContext.getString(R.string.auth_notification_text, localizedAccountNickname(localizedContext, account)))
             .setStyle(
                 NotificationCompat.BigTextStyle()
-                    .bigText(localizedContext.getString(R.string.auth_notification_details, account.nickname, localizedPlanName(localizedContext, account.planType)))
+                    .bigText(localizedContext.getString(R.string.auth_notification_details, localizedAccountNickname(localizedContext, account), localizedPlanName(localizedContext, account.planType)))
             )
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
