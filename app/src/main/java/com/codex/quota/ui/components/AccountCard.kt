@@ -52,10 +52,13 @@ fun AccountCard(item: AccountWithUsage, onClick: () -> Unit, onSignInClick: () -
                     }
                 }
                 HorizontalDivider()
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    SummaryMetric(stringResource(R.string.official_credit), usage?.remainingCredits?.let { NumberFormat.getCurrencyInstance(Locale.US).format(it) } ?: stringResource(R.string.value_unavailable))
-                    SummaryMetric(stringResource(R.string.estimated_weekly_budget), stringResource(R.string.value_unavailable))
-                    SummaryMetric(stringResource(R.string.reset_opportunities), usage?.bankedResets?.toString() ?: stringResource(R.string.value_unavailable))
+                Row(Modifier.fillMaxWidth()) {
+                    Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        SummaryMetric(stringResource(R.string.official_credit), usage?.remainingCredits?.let { NumberFormat.getCurrencyInstance(Locale.US).format(it) } ?: stringResource(R.string.value_unavailable))
+                    }
+                    Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        SummaryMetric(stringResource(R.string.reset_opportunities), usage?.bankedResets?.toString() ?: stringResource(R.string.value_unavailable))
+                    }
                 }
             }
         }

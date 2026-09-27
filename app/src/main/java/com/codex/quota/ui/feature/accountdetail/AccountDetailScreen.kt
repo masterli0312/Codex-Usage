@@ -1,12 +1,10 @@
 package com.codex.quota.ui.feature.accountdetail
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
@@ -23,12 +21,10 @@ import com.codex.quota.ui.components.CircularQuotaGauge
 import com.codex.quota.ui.components.StatusBadge
 import com.codex.quota.ui.util.formatQuotaPercent
 import com.codex.quota.ui.util.localizedPlanName
-import java.text.NumberFormat
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () -> Unit, onNavigateToEstimate: () -> Unit, modifier: Modifier = Modifier) {
+fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () -> Unit, modifier: Modifier = Modifier) {
     val data by viewModel.accountState.collectAsState()
     val refreshing by viewModel.isRefreshing.collectAsState()
     val deleted by viewModel.accountDeleted.collectAsState()
@@ -61,28 +57,6 @@ fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () ->
                         ValueColumn(stringResource(R.string.quota_weekly), formatQuotaPercent(usage?.remainingPercent))
                         ValueColumn(stringResource(R.string.quota_five_hour), formatQuotaPercent(usage?.fiveHourRemainingPercent))
                         ValueColumn(stringResource(R.string.gpt_reserve), formatQuotaPercent(usage?.gptReserveRemainingPercent))
-                    }
-                }
-            }
-            item {
-                Card(Modifier.fillMaxWidth().clickable(onClick = onNavigateToEstimate), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
-                    Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            Text(stringResource(R.string.estimated_remaining_value, stringResource(R.string.value_unavailable)), fontWeight = FontWeight.Bold)
-                            Text(stringResource(R.string.estimate_insufficient_data), style = MaterialTheme.typography.labelSmall)
-                        }
-                        Icon(Icons.Default.ChevronRight, contentDescription = null)
-                    }
-                }
-            }
-            item {
-                Panel {
-                    Text(stringResource(R.string.usage_statistics), fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(8.dp))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        ValueColumn(stringResource(R.string.token_rate), stringResource(R.string.value_unavailable))
-                        ValueColumn(stringResource(R.string.period_tokens), usage?.usedTokens?.let { NumberFormat.getIntegerInstance().format(it) } ?: stringResource(R.string.value_unavailable))
-                        ValueColumn(stringResource(R.string.api_equivalent_spend), stringResource(R.string.value_unavailable))
                     }
                 }
             }

@@ -10,9 +10,6 @@ sealed class Screen(val route: String) {
     data object SettingsPage : Screen("settings_page/{page}") {
         fun createRoute(page: String): String = "settings_page/$page"
     }
-    data object Estimate : Screen("estimate/{accountId}") {
-        fun createRoute(accountId: String): String = "estimate/$accountId"
-    }
     data object AccountDetail : Screen("account_detail/{accountId}") {
         fun createRoute(accountId: String): String = "account_detail/$accountId"
     }

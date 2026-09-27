@@ -39,7 +39,6 @@ import com.codex.quota.domain.usecase.UpdateAccountUseCase
 import com.codex.quota.ui.feature.about.AboutScreen
 import com.codex.quota.ui.feature.accountdetail.AccountDetailScreen
 import com.codex.quota.ui.feature.accountdetail.AccountDetailViewModel
-import com.codex.quota.ui.feature.accountdetail.EstimateScreen
 import com.codex.quota.ui.feature.addaccount.AddAccountScreen
 import com.codex.quota.ui.feature.addaccount.AddAccountViewModel
 import com.codex.quota.ui.feature.dashboard.DashboardScreen
@@ -169,18 +168,8 @@ fun AppNavigation(
                 }
                 AccountDetailScreen(
                     viewModel = detailViewModel,
-                    onNavigateBack = { navController.popBackStack() },
-                    onNavigateToEstimate = { navController.navigate(Screen.Estimate.createRoute(accountId)) }
+                    onNavigateBack = { navController.popBackStack() }
                 )
-            }
-
-            composable(Screen.Estimate.route, arguments = listOf(navArgument("accountId") { type = NavType.StringType })) { backStackEntry ->
-                val accountId = backStackEntry.arguments?.getString("accountId").orEmpty()
-                val detailViewModel: AccountDetailViewModel = scopedViewModel(key = accountId) {
-                    AccountDetailViewModel(app, accountId, app.repository, app.preferencesRepository,
-                        RefreshAccountUseCase(app.repository), UpdateAccountUseCase(app.repository), RemoveAccountUseCase(app.repository), app.consumeResetCredit)
-                }
-                EstimateScreen(detailViewModel, onNavigateBack = { navController.popBackStack() })
             }
 
             composable(
