@@ -2,6 +2,10 @@
 
 在 Android 手机上查看多个 ChatGPT/Codex 账号的额度状态、重置时间和订阅信息。支持简体中文与英文。
 
+![Codex Usage 功能展示图](docs/codex-usage-1.0.1-showcase.png)
+
+*功能展示图由 AI 生成；图中额度数值、账号及按钮状态仅作示意，实际界面与服务端数据为准。*
+
 [下载 1.0.1 测试版](https://github.com/masterli0312/Codex-Usage/releases/tag/apk-1.0.1-debug-r2) · [查看全部版本](https://github.com/masterli0312/Codex-Usage/releases) · [上游项目](https://github.com/boudywho/codex-quota-android)
 
 > 当前公开的 APK 是 **1.0.1 调试签名测试版**，需要 Android 8.0 或更高版本。安装前请阅读[安装与升级](#安装与升级)。
