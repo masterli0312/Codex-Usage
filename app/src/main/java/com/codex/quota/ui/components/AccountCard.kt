@@ -8,6 +8,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -18,12 +19,16 @@ import com.codex.quota.domain.model.AccountWithUsage
 import com.codex.quota.domain.model.AuthStatus
 import com.codex.quota.ui.util.localizedPlanName
 import java.text.NumberFormat
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 @Composable
 fun AccountCard(item: AccountWithUsage, onClick: () -> Unit, onSignInClick: () -> Unit, modifier: Modifier = Modifier) {
     val account = item.account
     val usage = item.usage
+    val subscriptionDate = usage?.subscriptionRenewalEpochMs?.takeIf { it > 0L }
+        ?: account.customRenewalDateEpochMs?.takeIf { it > 0L }
     val now = rememberQuotaClock()
     val signedOut = (usage?.status ?: account.authStatus) == AuthStatus.AUTHENTICATION_REQUIRED
     Card(modifier = modifier.fillMaxWidth().clickable(onClick = onClick), shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
@@ -55,7 +60,26 @@ fun AccountCard(item: AccountWithUsage, onClick: () -> Unit, onSignInClick: () -
                     }
                 }
             }
-            RelativeTimeText(account.lastSuccessfulSyncEpochMs, style = MaterialTheme.typography.labelSmall, now = now)
+            HorizontalDivider()
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                val subscriptionText = subscriptionDate?.takeIf { it > 0L }?.let { date ->
+                    val formattedDate = SimpleDateFormat(
+                        stringResource(R.string.subscription_card_date_pattern),
+                        LocalConfiguration.current.locales[0]
+                    ).format(Date(date))
+                    stringResource(
+                        when (usage?.willAutoRenew) {
+                            true -> R.string.subscription_renews
+                            false -> R.string.subscription_expires
+                            null -> R.string.subscription_date
+                        },
+                        formattedDate
+                    )
+                } ?: stringResource(R.string.subscription_date_unavailable)
+                Text(subscriptionText, modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Spacer(Modifier.width(8.dp))
+                RelativeTimeText(account.lastSuccessfulSyncEpochMs, style = MaterialTheme.typography.labelSmall, now = now)
+            }
         }
     }
 }

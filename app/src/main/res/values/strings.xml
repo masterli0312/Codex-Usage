@@ -95,6 +95,10 @@
     <string name="resets_renews">Resets in %1$s • Renews %2$s</string>
     <string name="resets_in">Resets in: %1$s</string>
     <string name="subscription_renews">Subscription renews %1$s</string>
+    <string name="subscription_expires">Subscription expires %1$s</string>
+    <string name="subscription_date">Subscription date %1$s</string>
+    <string name="subscription_date_unavailable">Subscription date unavailable</string>
+    <string name="subscription_card_date_pattern">MMM d</string>
     <string name="reset_days_hours">%1$d d %2$d h</string>
     <string name="reset_days">%1$d d</string>
     <string name="reset_hours_minutes">%1$d h %2$d m</string>

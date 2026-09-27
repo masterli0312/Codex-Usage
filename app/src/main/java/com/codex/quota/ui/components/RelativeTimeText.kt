@@ -9,6 +9,7 @@ import androidx.compose.ui.res.stringResource
 import com.codex.quota.R
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextOverflow
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -38,6 +39,8 @@ fun RelativeTimeText(
         text = text,
         modifier = modifier,
         style = style,
-        color = color
+        color = color,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis
     )
 }

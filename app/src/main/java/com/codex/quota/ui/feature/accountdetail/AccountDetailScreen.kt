@@ -42,7 +42,8 @@ fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () ->
     val account = data?.account
     val usage = data?.usage
     val now = rememberQuotaClock()
-    val renewalDate = usage?.subscriptionRenewalEpochMs ?: account?.customRenewalDateEpochMs
+    val renewalDate = usage?.subscriptionRenewalEpochMs?.takeIf { it > 0L }
+        ?: account?.customRenewalDateEpochMs?.takeIf { it > 0L }
     Scaffold(modifier = modifier.fillMaxSize(), topBar = {
         TopAppBar(title = {
             Column {
