@@ -44,8 +44,6 @@
     <string name="appearance_summary">System / light / dark</string>
     <string name="sync_summary">Periodic background refresh</string>
     <string name="notifications_summary">Low quota and account alerts</string>
-    <string name="renewal_protection">Renewal protection</string>
-    <string name="renewal_summary">Renewal reminders</string>
     <string name="privacy_summary">Local storage and security</string>
     <string name="solid_color_theme">Use solid-color theme</string>
     <string name="solid_color_summary">Turn off wallpaper colors</string>
@@ -66,11 +64,6 @@
     <string name="alert_method">Alert method</string>
     <string name="system_notification">System notification</string>
     <string name="notification_channel_controls">Sound and vibration are managed in Android notification settings.</string>
-    <string name="renewal_advance_alert">Pre-renewal alert</string>
-    <string name="advance_days">Days in advance</string>
-    <string name="renewal_confirm_alert">Renewal confirmation alert</string>
-    <string name="renewal_failure_alert">Renewal failure alert</string>
-    <string name="test_notification">Send test notification</string>
     <string name="zero_telemetry">Zero telemetry</string>
     <string name="zero_telemetry_detail">No analytics or usage upload</string>
     <string name="local_encryption">Local encryption</string>

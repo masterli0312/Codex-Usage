@@ -44,8 +44,6 @@
     <string name="appearance_summary">跟随系统 / 浅色 / 深色</string>
     <string name="sync_summary">定时后台更新数据</string>
     <string name="notifications_summary">低额度、5 小时与 7 天提醒</string>
-    <string name="renewal_protection">续费保障</string>
-    <string name="renewal_summary">续费前提醒与确认</string>
     <string name="privacy_summary">本地数据、加密与清除</string>
     <string name="solid_color_theme">使用纯色主题</string>
     <string name="solid_color_summary">关闭壁纸动态配色</string>
@@ -66,11 +64,6 @@
     <string name="alert_method">提醒方式</string>
     <string name="system_notification">系统通知</string>
     <string name="notification_channel_controls">声音和震动可在 Android 系统通知设置中管理。</string>
-    <string name="renewal_advance_alert">续费前提醒</string>
-    <string name="advance_days">提前提醒天数</string>
-    <string name="renewal_confirm_alert">确认充值提醒</string>
-    <string name="renewal_failure_alert">续费失败提醒</string>
-    <string name="test_notification">发送测试通知</string>
     <string name="zero_telemetry">零遥测</string>
     <string name="zero_telemetry_detail">无分析、无遥测或使用数据上报</string>
     <string name="local_encryption">本地加密</string>

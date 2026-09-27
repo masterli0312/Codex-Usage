@@ -15,11 +15,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -34,15 +39,14 @@ import com.codex.quota.ui.theme.Red500
 import com.codex.quota.ui.util.localizedAccountNickname
 import com.codex.quota.ui.util.localizedShortPlanName
 
-private data class SettingEntry(val page: String, val title: Int, val subtitle: Int, val icon: String)
+private data class SettingEntry(val page: String, val title: Int, val subtitle: Int, val icon: ImageVector? = null)
 
 private val entries = listOf(
-    SettingEntry("language", R.string.language_title, R.string.language_summary, "🌐"),
-    SettingEntry("appearance", R.string.appearance_theme, R.string.appearance_summary, "◉"),
-    SettingEntry("sync", R.string.background_synchronization, R.string.sync_summary, "⟳"),
-    SettingEntry("notifications", R.string.notifications_alerts, R.string.notifications_summary, "♟"),
-    SettingEntry("renewal", R.string.renewal_protection, R.string.renewal_summary, "◷"),
-    SettingEntry("privacy", R.string.privacy_local_storage, R.string.privacy_summary, "◆")
+    SettingEntry("language", R.string.language_title, R.string.language_summary),
+    SettingEntry("appearance", R.string.appearance_theme, R.string.appearance_summary, Icons.Outlined.Palette),
+    SettingEntry("sync", R.string.background_synchronization, R.string.sync_summary, Icons.Outlined.Sync),
+    SettingEntry("notifications", R.string.notifications_alerts, R.string.notifications_summary, Icons.Outlined.Notifications),
+    SettingEntry("privacy", R.string.privacy_local_storage, R.string.privacy_summary, Icons.Outlined.Lock)
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,13 +60,20 @@ fun SettingsScreen(viewModel: SettingsViewModel, modifier: Modifier = Modifier, 
     fun notificationPermission() {
         if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
-    val title = if (page == "home") R.string.settings_title else entries.firstOrNull { it.page == page }?.title ?: R.string.settings_title
+    val currentPage = page.takeIf { it == "home" || entries.any { entry -> entry.page == it } } ?: "home"
+    val title = if (currentPage == "home") R.string.settings_title else entries.first { it.page == currentPage }.title
     Scaffold(modifier = modifier.fillMaxSize(), topBar = { TopAppBar(title = { Text(stringResource(title), fontWeight = FontWeight.Bold) }, navigationIcon = { if (page != "home") IconButton(onClick = onNavigateBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back)) } }) }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            when (page) {
+            when (currentPage) {
                 "home" -> entries.forEach { entry ->
                     Row(Modifier.fillMaxWidth().clickable { onNavigate(entry.page) }.padding(vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text(entry.icon, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.width(40.dp))
+                        Box(Modifier.width(40.dp), contentAlignment = Alignment.CenterStart) {
+                            if (entry.icon == null) {
+                                Text("🌐", style = MaterialTheme.typography.headlineSmall)
+                            } else {
+                                Icon(entry.icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                            }
+                        }
                         Column(Modifier.weight(1f)) {
                             Text(stringResource(entry.title), fontWeight = FontWeight.SemiBold)
                             Text(stringResource(entry.subtitle), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -123,13 +134,6 @@ fun SettingsScreen(viewModel: SettingsViewModel, modifier: Modifier = Modifier, 
                     Text(stringResource(R.string.alert_method), fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
                     Text(stringResource(R.string.system_notification), style = MaterialTheme.typography.bodyMedium)
                     Text(stringResource(R.string.notification_channel_controls), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                "renewal" -> {
-                    ToggleRow(stringResource(R.string.renewal_advance_alert), stringResource(R.string.feature_unavailable), false, {}, enabled = false)
-                    SettingsInfo(stringResource(R.string.advance_days), stringResource(R.string.feature_unavailable))
-                    ToggleRow(stringResource(R.string.renewal_confirm_alert), stringResource(R.string.feature_unavailable), false, {}, enabled = false)
-                    ToggleRow(stringResource(R.string.renewal_failure_alert), stringResource(R.string.feature_unavailable), false, {}, enabled = false)
-                    OutlinedButton(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.test_notification)) }
                 }
                 "privacy" -> {
                     SettingsInfo(stringResource(R.string.zero_telemetry), stringResource(R.string.zero_telemetry_detail))

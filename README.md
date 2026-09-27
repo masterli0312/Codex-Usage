@@ -14,7 +14,7 @@ Android app for viewing the quota information available from your own ChatGPT/Co
 
 ## 安装测试版
 
-在 [Releases](https://github.com/masterli0312/Codex-Usage/releases) 下载 **Codex-Usage-v1.0.1-debug.apk**。需要 Android 8.0（API 26）或更高版本。
+在 [最新 1.0.1 测试版](https://github.com/masterli0312/Codex-Usage/releases/tag/apk-1.0.1-debug-r2) 下载 **Codex-Usage-v1.0.1-debug.apk**。需要 Android 8.0（API 26）或更高版本。
 
 当前发布的是**调试签名测试包**，应用包名为 `com.codex.quota.debug`。它可以升级同一台构建电脑签名、包名相同且内部版本号更低的测试包。其他签名的 APK 不能直接覆盖安装；卸载旧版会清除该应用的本地账号和凭据，请先确认是否需要保留。正式发布前应配置独立的发布签名并提供正式签名 APK。
 
