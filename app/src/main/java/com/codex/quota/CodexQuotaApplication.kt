@@ -66,7 +66,13 @@ class CodexQuotaApplication : Application() {
             refreshScope = applicationScope,
             onUsageRefreshed = { usage ->
                 applicationScope.launch {
-                    if (preferencesRepository.getPreferences().backgroundSyncEnabled) {
+                    val prefs = preferencesRepository.getPreferences()
+                    if (prefs.fiveHourResetReminderEnabled) {
+                        WorkScheduler.scheduleFiveHourResetReminder(
+                            this@CodexQuotaApplication, usage.accountId, usage.fiveHourResetAtEpochMs
+                        )
+                    }
+                    if (prefs.backgroundSyncEnabled) {
                         WorkScheduler.scheduleFiveHourResetRefresh(
                             this@CodexQuotaApplication,
                             usage.accountId,
@@ -86,6 +92,18 @@ class CodexQuotaApplication : Application() {
         // Restore one-time reset refreshes from persisted official window timestamps.
         applicationScope.launch {
             val prefs = preferencesRepository.getPreferences()
+            if (prefs.fiveHourResetReminderEnabled) {
+                repository.getAllAccounts().forEach { item ->
+                    if (!item.account.isDemoAccount) {
+                        WorkScheduler.scheduleFiveHourResetReminder(
+                            this@CodexQuotaApplication, item.account.id,
+                            item.usage?.fiveHourResetAtEpochMs
+                        )
+                    }
+                }
+            } else {
+                WorkScheduler.cancelFiveHourResetReminders(this@CodexQuotaApplication)
+            }
             if (prefs.backgroundSyncEnabled) {
                 WorkScheduler.schedulePeriodicRefresh(this@CodexQuotaApplication, prefs.refreshInterval.minutes)
                 repository.getAllAccounts().forEach { item ->

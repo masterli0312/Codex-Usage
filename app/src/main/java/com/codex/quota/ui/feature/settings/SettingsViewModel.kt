@@ -116,6 +116,23 @@ class SettingsViewModel(
         }
     }
 
+    fun setFiveHourResetReminderEnabled(context: Context, enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesRepository.setFiveHourResetReminderEnabled(enabled)
+            if (enabled) {
+                accountRepository.getAllAccounts().forEach { item ->
+                    if (!item.account.isDemoAccount) {
+                        WorkScheduler.scheduleFiveHourResetReminder(
+                            context, item.account.id, item.usage?.fiveHourResetAtEpochMs
+                        )
+                    }
+                }
+            } else {
+                WorkScheduler.cancelFiveHourResetReminders(context)
+            }
+        }
+    }
+
     fun setIncludeWeeklyQuotaAlerts(enabled: Boolean) {
         viewModelScope.launch {
             preferencesRepository.setIncludeWeeklyQuotaAlerts(enabled)
@@ -137,6 +154,7 @@ class SettingsViewModel(
     fun clearAllData() {
         viewModelScope.launch {
             if (accountRepository.clearAllData().isSuccess) {
+                // Any queued reminder becomes invalid when its account is gone.
                 preferencesRepository.getPreferences().autoActivateFiveHourAccountIds.forEach { accountId ->
                     preferencesRepository.setAutoActivateFiveHourAccount(accountId, false)
                 }

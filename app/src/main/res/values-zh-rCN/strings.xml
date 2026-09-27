@@ -51,6 +51,11 @@
     <string name="solid_color_summary">关闭壁纸动态配色</string>
     <string name="five_hour_warning">5 小时额度即将提醒</string>
     <string name="five_hour_warning_summary">5 小时额度即将耗尽时提醒</string>
+    <string name="five_hour_reset_reminder">5 小时重置提醒</string>
+    <string name="five_hour_reset_reminder_summary">按各账号的官方重置时间，提前约 5 分钟通知；Android 后台执行可能延迟。</string>
+    <string name="five_hour_reset_channel">5 小时重置提醒</string>
+    <string name="five_hour_reset_notification_title">5 小时额度即将重置</string>
+    <string name="five_hour_reset_notification_text">%1$s：5 小时额度约 5 分钟后重置。</string>
     <string name="weekly_warning">7 天额度即将提醒</string>
     <string name="weekly_warning_summary">7 天额度即将耗尽时提醒</string>
     <string name="reset_alert">Reset 机会提醒</string>
@@ -218,7 +223,7 @@
     <string name="relative_date_pattern">M 月 d 日 HH:mm</string>
     <string name="demo_account_plan">演示账号</string>
     <string name="billing_yearly">每年</string>
-    <string name="app_name">Codex Quota</string>
+    <string name="app_name">Codex Usage</string>
     <string name="app_description">查看多个 OpenAI Codex 账号的额度和重置时间。</string>
     <string name="disclaimer">Codex Quota 是独立开源工具，与 OpenAI 没有关联，也未经其维护、授权、赞助或认可。</string>
     <string name="channel_auth_name">账号登录提醒</string>

@@ -14,6 +14,31 @@ import java.util.concurrent.TimeUnit
 object WorkScheduler {
 
     private const val RESET_REFRESH_TAG = "five_hour_reset_refresh"
+    private const val RESET_REMINDER_TAG = "five_hour_reset_reminder"
+
+    fun scheduleFiveHourResetReminder(context: Context, accountId: String, resetAtEpochMs: Long?) {
+        val manager = WorkManager.getInstance(context)
+        val name = "$RESET_REMINDER_TAG:$accountId"
+        val now = System.currentTimeMillis()
+        if (resetAtEpochMs == null || resetAtEpochMs <= now) {
+            manager.cancelUniqueWork(name)
+            return
+        }
+        val delay = (resetAtEpochMs - FiveHourResetReminderWorker.LEAD_TIME_MS - now).coerceAtLeast(0L)
+        val request = OneTimeWorkRequestBuilder<FiveHourResetReminderWorker>()
+            .setInitialDelay(delay, TimeUnit.MILLISECONDS)
+            .setInputData(workDataOf(
+                FiveHourResetReminderWorker.ACCOUNT_ID to accountId,
+                FiveHourResetReminderWorker.RESET_AT to resetAtEpochMs
+            ))
+            .addTag(RESET_REMINDER_TAG)
+            .build()
+        manager.enqueueUniqueWork(name, ExistingWorkPolicy.REPLACE, request)
+    }
+
+    fun cancelFiveHourResetReminders(context: Context) {
+        WorkManager.getInstance(context).cancelAllWorkByTag(RESET_REMINDER_TAG)
+    }
 
     fun scheduleFiveHourResetRefresh(context: Context, accountId: String, resetAtEpochMs: Long?) {
         val now = System.currentTimeMillis()

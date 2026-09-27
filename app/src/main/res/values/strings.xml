@@ -51,6 +51,11 @@
     <string name="solid_color_summary">Turn off wallpaper colors</string>
     <string name="five_hour_warning">5-hour quota warning</string>
     <string name="five_hour_warning_summary">Warn when the 5-hour quota is low</string>
+    <string name="five_hour_reset_reminder">5-hour reset reminder</string>
+    <string name="five_hour_reset_reminder_summary">Notify about 5 minutes before each account’s official reset time. Android may delay background notifications.</string>
+    <string name="five_hour_reset_channel">5-hour reset reminders</string>
+    <string name="five_hour_reset_notification_title">5-hour quota resets soon</string>
+    <string name="five_hour_reset_notification_text">%1$s: 5-hour quota is due to reset in about 5 minutes.</string>
     <string name="weekly_warning">7-day quota warning</string>
     <string name="weekly_warning_summary">Warn when the 7-day quota is low</string>
     <string name="reset_alert">Reset opportunity alert</string>
@@ -224,7 +229,7 @@
     <string name="relative_date_pattern">MMM d, h:mm a</string>
     <string name="demo_account_plan">Demo Account</string>
     <string name="billing_yearly">Yearly</string>
-    <string name="app_name">Codex Quota</string>
+    <string name="app_name">Codex Usage</string>
     <string name="app_description">Monitor multi-account OpenAI Codex quotas and reset times.</string>
     <string name="disclaimer">Codex Quota is an independent, open-source utility and is not affiliated with, maintained, authorized, sponsored, or endorsed by OpenAI.</string>
     <string name="channel_auth_name">Account Authentication Alerts</string>

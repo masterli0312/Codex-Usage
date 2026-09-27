@@ -42,6 +42,7 @@ data class UserPreferences(
     val signedOutNotificationsEnabled: Boolean = true,
     val quotaAlertsEnabled: Boolean = true,
     val includeFiveHourQuotaAlerts: Boolean = false,
+    val fiveHourResetReminderEnabled: Boolean = false,
     val includeWeeklyQuotaAlerts: Boolean = true,
     val includeGptReserveAlerts: Boolean = false,
     val quotaAlertThresholds: Set<Int> = setOf(5, 10, 25),

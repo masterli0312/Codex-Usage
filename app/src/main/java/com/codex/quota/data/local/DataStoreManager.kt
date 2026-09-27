@@ -66,6 +66,7 @@ class DataStoreManager(private val context: Context) : ResetOperationStore, Five
         val SIGNED_OUT_NOTIFICATIONS = booleanPreferencesKey("signed_out_notifications_enabled")
         val QUOTA_ALERTS_ENABLED = booleanPreferencesKey("quota_alerts_enabled")
         val INCLUDE_FIVE_HOUR_QUOTA_ALERTS = booleanPreferencesKey("include_five_hour_quota_alerts")
+        val FIVE_HOUR_RESET_REMINDER_ENABLED = booleanPreferencesKey("five_hour_reset_reminder_enabled")
         val INCLUDE_WEEKLY_QUOTA_ALERTS = booleanPreferencesKey("include_weekly_quota_alerts")
         val INCLUDE_GPT_RESERVE_ALERTS = booleanPreferencesKey("include_gpt_reserve_alerts")
         val QUOTA_ALERT_THRESHOLDS = stringSetPreferencesKey("quota_alert_thresholds_set")
@@ -100,6 +101,7 @@ class DataStoreManager(private val context: Context) : ResetOperationStore, Five
             signedOutNotificationsEnabled = prefs[PreferencesKeys.SIGNED_OUT_NOTIFICATIONS] ?: true,
             quotaAlertsEnabled = prefs[PreferencesKeys.QUOTA_ALERTS_ENABLED] ?: true,
             includeFiveHourQuotaAlerts = prefs[PreferencesKeys.INCLUDE_FIVE_HOUR_QUOTA_ALERTS] ?: false,
+            fiveHourResetReminderEnabled = prefs[PreferencesKeys.FIVE_HOUR_RESET_REMINDER_ENABLED] ?: false,
             includeWeeklyQuotaAlerts = prefs[PreferencesKeys.INCLUDE_WEEKLY_QUOTA_ALERTS] ?: true,
             includeGptReserveAlerts = prefs[PreferencesKeys.INCLUDE_GPT_RESERVE_ALERTS] ?: false,
             quotaAlertThresholds = thresholds,
@@ -170,6 +172,25 @@ class DataStoreManager(private val context: Context) : ResetOperationStore, Five
         context.dataStore.edit { prefs ->
             prefs[PreferencesKeys.INCLUDE_FIVE_HOUR_QUOTA_ALERTS] = enabled
         }
+    }
+
+    suspend fun setFiveHourResetReminderEnabled(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[PreferencesKeys.FIVE_HOUR_RESET_REMINDER_ENABLED] = enabled
+        }
+    }
+
+    /** Atomically mark a window so overlapping workers cannot notify twice. */
+    suspend fun claimFiveHourResetReminder(accountId: String, resetAtEpochMs: Long): Boolean {
+        val key = longPreferencesKey("five_hour_reset_reminder_" + accountId)
+        var claimed = false
+        context.dataStore.edit { prefs ->
+            if ((prefs[key] ?: 0L) < resetAtEpochMs) {
+                prefs[key] = resetAtEpochMs
+                claimed = true
+            }
+        }
+        return claimed
     }
 
     suspend fun setIncludeWeeklyQuotaAlerts(enabled: Boolean) {

@@ -69,7 +69,7 @@ class MainActivity : AppCompatActivity() {
                         Manifest.permission.POST_NOTIFICATIONS
                     ) == PackageManager.PERMISSION_GRANTED
 
-                    if (!isGranted && (loadedPreferences.signedOutNotificationsEnabled || loadedPreferences.quotaAlertsEnabled)) {
+                    if (!isGranted && (loadedPreferences.signedOutNotificationsEnabled || loadedPreferences.quotaAlertsEnabled || loadedPreferences.fiveHourResetReminderEnabled)) {
                         permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                     }
                 }

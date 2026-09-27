@@ -115,6 +115,7 @@ fun SettingsScreen(viewModel: SettingsViewModel, modifier: Modifier = Modifier, 
                 "notifications" -> {
                     ToggleRow(stringResource(R.string.low_quota_warnings), stringResource(R.string.alerts_when_an_account_reaches_critical_quota_thresholds), preferences.quotaAlertsEnabled, { if (it) notificationPermission(); viewModel.setQuotaAlertsEnabled(it) })
                     ToggleRow(stringResource(R.string.five_hour_warning), stringResource(R.string.five_hour_warning_summary), preferences.includeFiveHourQuotaAlerts, { if (it) notificationPermission(); viewModel.setIncludeFiveHourQuotaAlerts(it) })
+                    ToggleRow(stringResource(R.string.five_hour_reset_reminder), stringResource(R.string.five_hour_reset_reminder_summary), preferences.fiveHourResetReminderEnabled, { if (it) notificationPermission(); viewModel.setFiveHourResetReminderEnabled(context, it) })
                     ToggleRow(stringResource(R.string.weekly_warning), stringResource(R.string.weekly_warning_summary), preferences.includeWeeklyQuotaAlerts, { if (it) notificationPermission(); viewModel.setIncludeWeeklyQuotaAlerts(it) })
                     ToggleRow(stringResource(R.string.reset_alert), stringResource(R.string.feature_unavailable), false, {}, enabled = false)
                     ToggleRow(stringResource(R.string.reserve_alert), stringResource(R.string.reserve_alert_summary), preferences.includeGptReserveAlerts, { if (it) notificationPermission(); viewModel.setIncludeGptReserveAlerts(it) })

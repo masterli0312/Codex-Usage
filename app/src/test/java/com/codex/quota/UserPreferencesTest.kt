@@ -24,6 +24,7 @@ class UserPreferencesTest {
         assertTrue(prefs.signedOutNotificationsEnabled)
         assertTrue(prefs.quotaAlertsEnabled)
         assertFalse(prefs.includeFiveHourQuotaAlerts) // 5-hour warnings opt-in default false
+        assertFalse(prefs.fiveHourResetReminderEnabled)
         assertFalse(prefs.includeGptReserveAlerts)
         assertEquals(setOf(5, 10, 25), prefs.quotaAlertThresholds)
         assertFalse(prefs.hasCompletedOnboarding)

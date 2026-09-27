@@ -59,6 +59,10 @@ class UserPreferencesRepositoryImpl(
         dataStoreManager.setIncludeFiveHourQuotaAlerts(enabled)
     }
 
+    override suspend fun setFiveHourResetReminderEnabled(enabled: Boolean) {
+        dataStoreManager.setFiveHourResetReminderEnabled(enabled)
+    }
+
     override suspend fun setIncludeWeeklyQuotaAlerts(enabled: Boolean) {
         dataStoreManager.setIncludeWeeklyQuotaAlerts(enabled)
     }
