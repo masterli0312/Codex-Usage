@@ -200,7 +200,8 @@ object DeviceCodeManager {
                         refreshToken = refreshToken,
                         idToken = idToken,
                         expiresInSeconds = expiresIn,
-                        decodedInfo = decoded
+                        decodedInfo = decoded,
+                        clientId = OFFICIAL_CLIENT_ID
                     )
                 )
             } else {

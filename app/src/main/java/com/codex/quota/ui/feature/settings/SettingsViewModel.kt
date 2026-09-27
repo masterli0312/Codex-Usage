@@ -53,9 +53,23 @@ class SettingsViewModel(
             if (enabled) {
                 val currentInterval = preferencesState.value.refreshInterval.minutes
                 WorkScheduler.schedulePeriodicRefresh(context, currentInterval)
+                accountRepository.getAllAccounts().forEach { item ->
+                    if (!item.account.isDemoAccount) {
+                        WorkScheduler.scheduleFiveHourResetRefresh(
+                            context, item.account.id, item.usage?.fiveHourResetAtEpochMs
+                        )
+                    }
+                }
             } else {
                 WorkScheduler.cancelPeriodicRefresh(context)
+                WorkScheduler.cancelFiveHourResetRefresh(context)
             }
+        }
+    }
+
+    fun setAutoActivateFiveHourEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesRepository.setAutoActivateFiveHourEnabled(enabled)
         }
     }
 

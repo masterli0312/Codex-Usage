@@ -68,6 +68,30 @@ class CodexAccountRepositoryTest {
     }
 
     @Test
+    fun oauthAccount_persistsRefreshCredentialAndRemovesItWithAccount() = runTest {
+        val account = repository.addAccount(
+            nickname = "OAuth",
+            email = null,
+            apiKey = "access-token",
+            planType = PlanType.PLUS,
+            organizationId = null,
+            colorHex = "#10B981",
+            isDemoAccount = false,
+            oauthRefreshToken = "refresh-token",
+            oauthClientId = "official-client"
+        ).getOrThrow()
+
+        assertEquals("access-token", fakeCredentialStore.getApiKey(account.id))
+        assertEquals("refresh-token", fakeCredentialStore.getRefreshToken(account.id))
+        assertEquals("official-client", fakeCredentialStore.getOAuthClientId(account.id))
+
+        repository.removeAccount(account.id)
+        assertNull(fakeCredentialStore.getApiKey(account.id))
+        assertNull(fakeCredentialStore.getRefreshToken(account.id))
+        assertNull(fakeCredentialStore.getOAuthClientId(account.id))
+    }
+
+    @Test
     fun removeAccount_cleansUpDatabaseAndCredentials() = runTest {
         val addResult = repository.addAccount(
             nickname = "To Delete",
@@ -198,18 +222,36 @@ class FakeUsageSnapshotDao : UsageSnapshotDao {
 
 class FakeCredentialStore : CredentialStore {
     private val storage = mutableMapOf<String, String>()
+    private val refreshTokens = mutableMapOf<String, String>()
+    private val clientIds = mutableMapOf<String, String>()
 
     override fun storeApiKey(accountId: String, apiKey: String) {
         storage[accountId] = apiKey
+        refreshTokens.remove(accountId)
+        clientIds.remove(accountId)
     }
+
+    override fun storeOAuthTokens(accountId: String, accessToken: String, refreshToken: String, clientId: String) {
+        storage[accountId] = accessToken
+        refreshTokens[accountId] = refreshToken
+        clientIds[accountId] = clientId
+    }
+
+    override fun getRefreshToken(accountId: String): String? = refreshTokens[accountId]
+
+    override fun getOAuthClientId(accountId: String): String? = clientIds[accountId]
 
     override fun getApiKey(accountId: String): String? = storage[accountId]
 
     override fun removeApiKey(accountId: String) {
         storage.remove(accountId)
+        refreshTokens.remove(accountId)
+        clientIds.remove(accountId)
     }
 
     override fun clearAll() {
         storage.clear()
+        refreshTokens.clear()
+        clientIds.clear()
     }
 }

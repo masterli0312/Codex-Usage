@@ -248,7 +248,9 @@ class AddAccountViewModel(
             planType = decoded?.planType ?: _uiState.value.planType,
             organizationId = decoded?.organizationId ?: _uiState.value.organizationId.ifBlank { null },
             colorHex = _uiState.value.selectedColorHex,
-            isDemoAccount = false
+            isDemoAccount = false,
+            oauthRefreshToken = tokenResult.refreshToken,
+            oauthClientId = tokenResult.clientId
         )
 
         if (addResult.isSuccess) {

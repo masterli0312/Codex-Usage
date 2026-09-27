@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.util.Base64
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.FormBody
@@ -19,8 +20,11 @@ data class OAuthTokenResult(
     val refreshToken: String?,
     val idToken: String?,
     val expiresInSeconds: Long?,
-    val decodedInfo: DecodedTokenInfo?
+    val decodedInfo: DecodedTokenInfo?,
+    val clientId: String = OAuthManager.DEFAULT_CLIENT_ID
 )
+
+class OAuthTokenRefreshRejectedException(val statusCode: Int) : Exception("OAuth refresh rejected: HTTP $statusCode")
 
 object OAuthManager {
 
@@ -75,6 +79,40 @@ object OAuthManager {
         }
         context.startActivity(browserIntent)
     }
+
+    suspend fun refreshAccessToken(refreshToken: String, clientId: String): Result<OAuthTokenResult> =
+        withContext(Dispatchers.IO) {
+            try {
+                val request = Request.Builder()
+                    .url(TOKEN_ENDPOINT)
+                    .post(FormBody.Builder()
+                        .add("grant_type", "refresh_token")
+                        .add("client_id", clientId)
+                        .add("refresh_token", refreshToken)
+                        .build())
+                    .addHeader("Accept", "application/json")
+                    .build()
+                httpClient.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) {
+                        return@withContext Result.failure(OAuthTokenRefreshRejectedException(response.code))
+                    }
+                    val json = JSONObject(response.body?.string().orEmpty())
+                    val accessToken = json.getString("access_token")
+                    Result.success(OAuthTokenResult(
+                        accessToken = accessToken,
+                        refreshToken = json.optString("refresh_token").takeIf { it.isNotBlank() },
+                        idToken = json.optString("id_token").takeIf { it.isNotBlank() },
+                        expiresInSeconds = json.optLong("expires_in", 0L),
+                        decodedInfo = JwtTokenParser.parseToken(accessToken),
+                        clientId = clientId
+                    ))
+                }
+            } catch (exception: CancellationException) {
+                throw exception
+            } catch (exception: Exception) {
+                Result.failure(exception)
+            }
+        }
 
     suspend fun exchangeCodeForToken(
         code: String,

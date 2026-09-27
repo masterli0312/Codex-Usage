@@ -220,6 +220,7 @@ class FakeUserPreferencesRepository : UserPreferencesRepository {
     override suspend fun setDynamicColor(enabled: Boolean) {}
     override suspend fun setWidgetThemeMode(mode: WidgetThemeMode) {}
     override suspend fun setBackgroundSyncEnabled(enabled: Boolean) {}
+    override suspend fun setAutoActivateFiveHourEnabled(enabled: Boolean) {}
     override suspend fun setRefreshInterval(interval: RefreshIntervalMinutes) {}
     override suspend fun setRefreshOnAppOpen(enabled: Boolean) {}
     override suspend fun setSignedOutNotificationsEnabled(enabled: Boolean) {}

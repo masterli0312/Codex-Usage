@@ -19,7 +19,9 @@ interface CodexAccountRepository {
         planType: PlanType,
         organizationId: String?,
         colorHex: String,
-        isDemoAccount: Boolean = false
+        isDemoAccount: Boolean = false,
+        oauthRefreshToken: String? = null,
+        oauthClientId: String? = null
     ): Result<CodexAccount>
 
     suspend fun updateAccount(

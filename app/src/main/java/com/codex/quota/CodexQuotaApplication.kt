@@ -58,16 +58,41 @@ class CodexQuotaApplication : Application() {
             credentialStore = credentialStore,
             realDataSource = RealOpenAiDataSource(),
             mockDataSource = MockOpenAiDataSource(),
-            refreshScope = applicationScope
+            refreshScope = applicationScope,
+            onUsageRefreshed = { usage ->
+                applicationScope.launch {
+                    if (preferencesRepository.getPreferences().backgroundSyncEnabled) {
+                        WorkScheduler.scheduleFiveHourResetRefresh(
+                            this@CodexQuotaApplication,
+                            usage.accountId,
+                            usage.fiveHourResetAtEpochMs
+                        )
+                    }
+                }
+            }
         )
 
         preferencesRepository = UserPreferencesRepositoryImpl(dataStoreManager)
         consumeResetCredit = ConsumeResetCreditUseCase(repository, credentialStore, dataStoreManager, WhamResetCreditConsumer())
 
-        // Schedule periodic background refresh
+        // Restore one-time reset refreshes from persisted official window timestamps.
         applicationScope.launch {
             val prefs = preferencesRepository.getPreferences()
-            WorkScheduler.schedulePeriodicRefresh(this@CodexQuotaApplication, prefs.refreshInterval.minutes)
+            if (prefs.backgroundSyncEnabled) {
+                WorkScheduler.schedulePeriodicRefresh(this@CodexQuotaApplication, prefs.refreshInterval.minutes)
+                repository.getAllAccounts().forEach { item ->
+                    if (!item.account.isDemoAccount) {
+                        WorkScheduler.scheduleFiveHourResetRefresh(
+                            this@CodexQuotaApplication,
+                            item.account.id,
+                            item.usage?.fiveHourResetAtEpochMs
+                        )
+                    }
+                }
+            } else {
+                WorkScheduler.cancelPeriodicRefresh(this@CodexQuotaApplication)
+                WorkScheduler.cancelFiveHourResetRefresh(this@CodexQuotaApplication)
+            }
         }
     }
 

@@ -1,5 +1,8 @@
 package com.codex.quota.data.repository
 
+import com.codex.quota.auth.JwtTokenParser
+import com.codex.quota.auth.OAuthManager
+import com.codex.quota.auth.OAuthTokenRefreshRejectedException
 import com.codex.quota.data.local.dao.AccountDao
 import com.codex.quota.data.local.dao.UsageSnapshotDao
 import com.codex.quota.data.local.entity.AccountEntity
@@ -36,10 +39,12 @@ class CodexAccountRepositoryImpl(
     private val credentialStore: CredentialStore,
     private val realDataSource: CodexAccountDataSource = RealOpenAiDataSource(),
     private val mockDataSource: CodexAccountDataSource = MockOpenAiDataSource(),
-    private val refreshScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val refreshScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
+    private val onUsageRefreshed: (CodexUsage) -> Unit = {}
 ) : CodexAccountRepository {
 
     private val refreshMutex = Mutex()
+    private val tokenRefreshMutex = Mutex()
     private var activeRefresh: Deferred<Result<List<CodexUsage>>>? = null
 
     override fun observeAccounts(): Flow<List<AccountWithUsage>> {
@@ -95,7 +100,9 @@ class CodexAccountRepositoryImpl(
         planType: PlanType,
         organizationId: String?,
         colorHex: String,
-        isDemoAccount: Boolean
+        isDemoAccount: Boolean,
+        oauthRefreshToken: String?,
+        oauthClientId: String?
     ): Result<CodexAccount> {
         val accountId = UUID.randomUUID().toString()
         val existing = accountDao.getAll()
@@ -116,7 +123,11 @@ class CodexAccountRepositoryImpl(
             lastSuccessfulSyncEpochMs = null
         )
 
-        credentialStore.storeApiKey(accountId, apiKey)
+        if (!oauthRefreshToken.isNullOrBlank() && !oauthClientId.isNullOrBlank()) {
+            credentialStore.storeOAuthTokens(accountId, apiKey, oauthRefreshToken, oauthClientId)
+        } else {
+            credentialStore.storeApiKey(accountId, apiKey)
+        }
         accountDao.insert(AccountEntity.fromDomain(domainAccount))
 
         // Trigger initial refresh
@@ -182,11 +193,17 @@ class CodexAccountRepositoryImpl(
         apiKey: String
     ): Result<CodexUsage> {
         val dataSource = if (account.isDemoAccount) mockDataSource else realDataSource
-        val result = dataSource.fetchUsage(account, apiKey)
+        val currentKey = if (account.isDemoAccount) Result.success(apiKey)
+            else ensureFreshAccessToken(account.id, apiKey)
+        if (currentKey.isFailure) return Result.failure(currentKey.exceptionOrNull()!!)
+        val result = dataSource.fetchUsage(account, currentKey.getOrThrow())
 
         return if (result.isSuccess) {
             val usage = result.getOrThrow()
             usageSnapshotDao.insertOrUpdate(UsageSnapshotEntity.fromDomain(usage))
+            if (!account.isDemoAccount && usage.status == AuthStatus.AUTHENTICATED) {
+                onUsageRefreshed(usage)
+            }
 
             val lastSync = if (usage.status == AuthStatus.AUTHENTICATED) {
                 usage.fetchedAtEpochMs
@@ -206,6 +223,36 @@ class CodexAccountRepositoryImpl(
             Result.failure(exception)
         }
     }
+
+    private suspend fun ensureFreshAccessToken(accountId: String, suppliedKey: String): Result<String> =
+        tokenRefreshMutex.withLock {
+            val storedKey = credentialStore.getApiKey(accountId) ?: suppliedKey
+            val expiry = JwtTokenParser.parseToken(storedKey)?.expiresAtEpochMs
+                ?: return@withLock Result.success(storedKey)
+            if (expiry > System.currentTimeMillis() + 5 * 60_000L) {
+                return@withLock Result.success(storedKey)
+            }
+            val refreshToken = credentialStore.getRefreshToken(accountId)
+                ?: return@withLock Result.success(storedKey)
+            val clientId = credentialStore.getOAuthClientId(accountId)
+                ?: return@withLock Result.failure(IllegalStateException("OAuth client identifier missing"))
+            val refreshedResult = OAuthManager.refreshAccessToken(refreshToken, clientId)
+            val rejection = refreshedResult.exceptionOrNull() as? OAuthTokenRefreshRejectedException
+            if (rejection != null && rejection.statusCode in listOf(400, 401) &&
+                expiry <= System.currentTimeMillis()) {
+                // Let the existing expired-token path mark the account as needing login.
+                return@withLock Result.success(storedKey)
+            }
+            refreshedResult.map { refreshed ->
+                credentialStore.storeOAuthTokens(
+                    accountId,
+                    refreshed.accessToken,
+                    refreshed.refreshToken ?: refreshToken,
+                    clientId
+                )
+                refreshed.accessToken
+            }
+        }
 
     override suspend fun refreshAllAccounts(): Result<List<CodexUsage>> {
         val refresh = refreshMutex.withLock {

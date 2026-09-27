@@ -14,7 +14,9 @@ class AddAccountUseCase(
         planType: PlanType,
         organizationId: String?,
         colorHex: String,
-        isDemoAccount: Boolean = false
+        isDemoAccount: Boolean = false,
+        oauthRefreshToken: String? = null,
+        oauthClientId: String? = null
     ): Result<CodexAccount> {
         val trimmedKey = apiKey.trim()
         if (!isDemoAccount && trimmedKey.isBlank()) {
@@ -28,7 +30,9 @@ class AddAccountUseCase(
             planType = planType,
             organizationId = organizationId?.trim()?.ifBlank { null },
             colorHex = colorHex,
-            isDemoAccount = isDemoAccount
+            isDemoAccount = isDemoAccount,
+            oauthRefreshToken = oauthRefreshToken,
+            oauthClientId = oauthClientId
         )
     }
 }

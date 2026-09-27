@@ -85,6 +85,7 @@ fun SettingsScreen(viewModel: SettingsViewModel, modifier: Modifier = Modifier, 
                 }
                 "sync" -> {
                     ToggleRow(stringResource(R.string.periodic_background_sync), stringResource(R.string.app_wakes_periodically_in_background_to_refresh_quotas), preferences.backgroundSyncEnabled, { viewModel.setBackgroundSyncEnabled(context, it) })
+                    ToggleRow(stringResource(R.string.auto_activate_five_hour), stringResource(R.string.auto_activate_five_hour_summary), preferences.autoActivateFiveHourEnabled, viewModel::setAutoActivateFiveHourEnabled, enabled = preferences.backgroundSyncEnabled)
                     Text(stringResource(R.string.refresh_frequency), fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 14.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         listOf(RefreshIntervalMinutes.MINUTES_15, RefreshIntervalMinutes.MINUTES_30, RefreshIntervalMinutes.HOURS_1, RefreshIntervalMinutes.HOURS_3).forEach { interval ->

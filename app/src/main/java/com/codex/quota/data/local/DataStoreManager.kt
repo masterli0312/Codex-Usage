@@ -25,6 +25,19 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 
 class DataStoreManager(private val context: Context) : ResetOperationStore {
 
+    /** Claim before the billable request. An uncertain network result is never retried automatically. */
+    suspend fun claimFiveHourActivation(accountId: String, resetAtEpochMs: Long): Boolean {
+        val key = longPreferencesKey("five_hour_activation_" + accountId)
+        var claimed = false
+        context.dataStore.edit { prefs ->
+            if ((prefs[key] ?: 0L) < resetAtEpochMs) {
+                prefs[key] = resetAtEpochMs
+                claimed = true
+            }
+        }
+        return claimed
+    }
+
     override suspend fun getOrCreateResetOperationId(accountId: String): String {
         val key = stringPreferencesKey("pending_reset_operation_" + accountId)
         var operationId = ""
@@ -46,6 +59,7 @@ class DataStoreManager(private val context: Context) : ResetOperationStore {
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         val WIDGET_THEME_MODE = stringPreferencesKey("widget_theme_mode")
         val BACKGROUND_SYNC_ENABLED = booleanPreferencesKey("background_sync_enabled")
+        val AUTO_ACTIVATE_FIVE_HOUR = booleanPreferencesKey("auto_activate_five_hour")
         val REFRESH_INTERVAL = longPreferencesKey("refresh_interval_minutes")
         val REFRESH_ON_APP_OPEN = booleanPreferencesKey("refresh_on_app_open")
         val SIGNED_OUT_NOTIFICATIONS = booleanPreferencesKey("signed_out_notifications_enabled")
@@ -79,6 +93,7 @@ class DataStoreManager(private val context: Context) : ResetOperationStore {
             dynamicColor = prefs[PreferencesKeys.DYNAMIC_COLOR] ?: true,
             widgetThemeMode = widgetThemeMode,
             backgroundSyncEnabled = prefs[PreferencesKeys.BACKGROUND_SYNC_ENABLED] ?: true,
+            autoActivateFiveHourEnabled = prefs[PreferencesKeys.AUTO_ACTIVATE_FIVE_HOUR] ?: false,
             refreshInterval = RefreshIntervalMinutes.fromMinutes(refreshIntervalMinutes),
             refreshOnAppOpen = prefs[PreferencesKeys.REFRESH_ON_APP_OPEN] ?: true,
             signedOutNotificationsEnabled = prefs[PreferencesKeys.SIGNED_OUT_NOTIFICATIONS] ?: true,
@@ -115,6 +130,12 @@ class DataStoreManager(private val context: Context) : ResetOperationStore {
     suspend fun setBackgroundSyncEnabled(enabled: Boolean) {
         context.dataStore.edit { prefs ->
             prefs[PreferencesKeys.BACKGROUND_SYNC_ENABLED] = enabled
+        }
+    }
+
+    suspend fun setAutoActivateFiveHourEnabled(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[PreferencesKeys.AUTO_ACTIVATE_FIVE_HOUR] = enabled
         }
     }
 
