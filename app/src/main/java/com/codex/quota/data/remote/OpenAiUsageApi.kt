@@ -132,7 +132,9 @@ class OpenAiUsageApi(
             } else {
                 val errorMsg = when (code) {
                     401 -> "ChatGPT subscriber session expired. Please re-authenticate."
-                    403 -> "ChatGPT access forbidden."
+                    403 -> if (isCloudflareNodeBlock(code, response.headers)) {
+                        CF_BLOCKED_ERROR
+                    } else "ChatGPT access forbidden."
                     429 -> "Usage rate limit reached."
                     in 500..599 -> "ChatGPT servers temporarily unavailable ($code)."
                     else -> "HTTP $code: $bodyString"

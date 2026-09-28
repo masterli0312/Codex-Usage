@@ -17,6 +17,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.codex.quota.R
+import com.codex.quota.data.remote.CF_BLOCKED_ERROR
 import com.codex.quota.domain.model.AuthStatus
 import com.codex.quota.domain.usecase.FiveHourActivationOutcome
 import com.codex.quota.domain.usecase.ResetSpendOutcome
@@ -83,6 +84,9 @@ fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () ->
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                         StatusBadge(usage?.status ?: account.authStatus)
                         RelativeTimeText(account.lastSuccessfulSyncEpochMs, style = MaterialTheme.typography.labelSmall, now = now)
+                    }
+                    if (usage?.errorMessage == CF_BLOCKED_ERROR) {
+                        Text(stringResource(R.string.node_blocked_message), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                     }
                     Spacer(Modifier.height(8.dp))
                     OutlinedButton(

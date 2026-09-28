@@ -15,6 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.codex.quota.R
+import com.codex.quota.data.remote.CF_BLOCKED_ERROR
 import com.codex.quota.domain.model.AccountWithUsage
 import com.codex.quota.domain.model.AuthStatus
 import com.codex.quota.ui.util.localizedAccountNickname
@@ -41,6 +42,9 @@ fun AccountCard(item: AccountWithUsage, onClick: () -> Unit, onSignInClick: () -
                     Text(localizedShortPlanName(context, account.planType), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 StatusBadge(usage?.status ?: account.authStatus)
+            }
+            if (usage?.errorMessage == CF_BLOCKED_ERROR) {
+                Text(stringResource(R.string.node_blocked_message), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
             }
             if (signedOut) {
                 TextButton(onClick = onSignInClick) { Text(stringResource(R.string.re_authenticate_now)) }

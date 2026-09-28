@@ -241,6 +241,9 @@
     <string name="just_now">刚刚</string>
     <string name="offline">离线</string>
     <string name="rate_limited_error">同步失败</string>
+    <string name="node_blocked_title">请切换 VPN 节点</string>
+    <string name="node_blocked_message">当前节点被 Cloudflare 拦截，无法刷新额度。请切换其他 VPN 节点后重试。</string>
+    <string name="node_blocked_notification">当前 VPN 节点无法刷新 Codex 额度，请切换节点后重试。</string>
     <string name="sign_in_required">需要登录</string>
     <string name="unknown">未知</string>
     <string name="dashboard_title">概览</string>

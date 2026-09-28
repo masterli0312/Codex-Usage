@@ -5,6 +5,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.codex.quota.CodexQuotaApplication
 import com.codex.quota.domain.model.AuthStatus
+import com.codex.quota.data.remote.CF_BLOCKED_ERROR
 import com.codex.quota.domain.model.CodexAccount
 import com.codex.quota.domain.model.CodexUsage
 import com.codex.quota.domain.model.QuotaWindow
@@ -13,6 +14,7 @@ import com.codex.quota.domain.repository.UserPreferencesRepository
 import com.codex.quota.domain.usecase.evaluateQuotaAlertDecision
 import com.codex.quota.notifications.QuotaAlertNotificationManager
 import com.codex.quota.notifications.SignedOutNotificationManager
+import com.codex.quota.notifications.NodeBlockedNotificationManager
 import com.codex.quota.ui.util.isApiKeyQuotaUsage
 import com.codex.quota.widget.WidgetUpdateHelper
 
@@ -30,10 +32,17 @@ class QuotaRefreshWorker(
 
         val preferences = prefsRepo.getPreferences()
 
+        val wasNodeBlocked = repository.getAllAccounts().any { it.usage?.errorMessage == CF_BLOCKED_ERROR }
         val refreshResult = repository.refreshAllAccounts()
 
         // Fetch refreshed accounts
         val currentAccounts = repository.getAllAccounts()
+        val nodeNotification = NodeBlockedNotificationManager(applicationContext)
+        if (currentAccounts.any { it.usage?.errorMessage == CF_BLOCKED_ERROR }) {
+            if (!wasNodeBlocked) nodeNotification.show()
+        } else {
+            nodeNotification.clear()
+        }
 
         // Check for signed-out transitions (notify only ONCE per sign-out event)
         if (preferences.signedOutNotificationsEnabled) {

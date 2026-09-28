@@ -247,6 +247,9 @@
     <string name="just_now">just now</string>
     <string name="offline">Offline</string>
     <string name="rate_limited_error">Sync failed</string>
+    <string name="node_blocked_title">Switch VPN node</string>
+    <string name="node_blocked_message">This node is blocked by Cloudflare. Switch to another VPN node and refresh again.</string>
+    <string name="node_blocked_notification">Codex Usage cannot refresh through this VPN node. Switch nodes and retry.</string>
     <string name="sign_in_required">Sign-In Required</string>
     <string name="unknown">Unknown</string>
     <string name="dashboard_title">Dashboard</string>
