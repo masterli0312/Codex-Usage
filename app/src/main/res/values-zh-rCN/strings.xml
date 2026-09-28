@@ -240,7 +240,7 @@
     <string name="never_synced">尚未同步</string>
     <string name="just_now">刚刚</string>
     <string name="offline">离线</string>
-    <string name="rate_limited_error">受到限流或发生错误</string>
+    <string name="rate_limited_error">同步失败</string>
     <string name="sign_in_required">需要登录</string>
     <string name="unknown">未知</string>
     <string name="dashboard_title">概览</string>

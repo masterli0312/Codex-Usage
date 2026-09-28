@@ -5,8 +5,11 @@ import com.codex.quota.data.local.dao.UsageSnapshotDao
 import com.codex.quota.data.local.entity.AccountEntity
 import com.codex.quota.data.local.entity.UsageSnapshotEntity
 import com.codex.quota.data.remote.MockOpenAiDataSource
+import com.codex.quota.data.remote.CodexAccountDataSource
 import com.codex.quota.data.repository.CodexAccountRepositoryImpl
 import com.codex.quota.domain.model.AuthStatus
+import com.codex.quota.domain.model.CodexAccount
+import com.codex.quota.domain.model.CodexUsage
 import com.codex.quota.domain.model.PlanType
 import com.codex.quota.security.CredentialStore
 import kotlinx.coroutines.flow.Flow
@@ -131,6 +134,46 @@ class CodexAccountRepositoryTest {
         val updated = fakeAccountDao.getById(accountId)
         assertEquals("New Nickname", updated?.nickname)
         assertEquals("#38BDF8", updated?.colorHex)
+    }
+
+    @Test
+    fun temporaryFailure_keepsLastSuccessfulQuotaUntilNextSuccess() = runTest {
+        var status = AuthStatus.AUTHENTICATED
+        var percent = 70.0
+        val source = object : CodexAccountDataSource {
+            override suspend fun fetchUsage(account: CodexAccount, apiKey: String): Result<CodexUsage> =
+                Result.success(CodexUsage(
+                    accountId = account.id, remainingPercent = if (status == AuthStatus.AUTHENTICATED) percent else null,
+                    usedPercent = null, usedTokens = null, totalLimitTokens = null,
+                    remainingCredits = if (status == AuthStatus.AUTHENTICATED) 3.0 else null,
+                    resetAtEpochMs = if (status == AuthStatus.AUTHENTICATED) 999_999_999_999L else null,
+                    status = status, fetchedAtEpochMs = if (status == AuthStatus.AUTHENTICATED) 100L else 200L,
+                    bankedResets = if (status == AuthStatus.AUTHENTICATED) 2 else null,
+                    fiveHourRemainingPercent = if (status == AuthStatus.AUTHENTICATED) 80.0 else null,
+                    errorMessage = if (status == AuthStatus.AUTHENTICATED) null else "HTTP 503"
+                ))
+        }
+        val repository = CodexAccountRepositoryImpl(fakeAccountDao, fakeUsageDao, fakeCredentialStore,
+            realDataSource = source, mockDataSource = source)
+        val account = repository.addAccount("li", null, "mock", PlanType.PLUS, null, "#10B981", true).getOrThrow()
+
+        status = AuthStatus.TEMPORARY_ERROR
+        val failed = repository.refreshAccount(account.id).getOrThrow()
+        assertEquals(AuthStatus.TEMPORARY_ERROR, failed.status)
+        assertEquals(70.0, failed.remainingPercent!!, 0.0)
+        assertEquals(80.0, failed.fiveHourRemainingPercent!!, 0.0)
+        assertEquals(3.0, failed.remainingCredits!!, 0.0)
+        assertEquals(2, failed.bankedResets)
+        assertEquals(100L, failed.fetchedAtEpochMs)
+        assertEquals("HTTP 503", failed.errorMessage)
+        assertEquals(100L, repository.getAccount(account.id)?.account?.lastSuccessfulSyncEpochMs)
+
+        status = AuthStatus.AUTHENTICATED
+        percent = 45.0
+        val recovered = repository.refreshAccount(account.id).getOrThrow()
+        assertEquals(AuthStatus.AUTHENTICATED, recovered.status)
+        assertEquals(45.0, recovered.remainingPercent!!, 0.0)
+        assertNull(recovered.errorMessage)
     }
 }
 

@@ -246,7 +246,7 @@
     <string name="never_synced">Never synced</string>
     <string name="just_now">just now</string>
     <string name="offline">Offline</string>
-    <string name="rate_limited_error">Rate Limited / Error</string>
+    <string name="rate_limited_error">Sync failed</string>
     <string name="sign_in_required">Sign-In Required</string>
     <string name="unknown">Unknown</string>
     <string name="dashboard_title">Dashboard</string>

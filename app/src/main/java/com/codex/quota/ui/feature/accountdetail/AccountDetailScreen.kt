@@ -17,6 +17,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.codex.quota.R
+import com.codex.quota.domain.model.AuthStatus
 import com.codex.quota.domain.usecase.FiveHourActivationOutcome
 import com.codex.quota.domain.usecase.ResetSpendOutcome
 import com.codex.quota.ui.components.CircularQuotaGauge
@@ -69,11 +70,11 @@ fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () ->
             item {
                 Panel {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                        CircularQuotaGauge(usage?.remainingPercent, size = 86.dp, strokeWidth = 9.dp)
+                        CircularQuotaGauge(usage?.remainingPercent?.takeUnless { usage.status != AuthStatus.AUTHENTICATED && usage.resetAtEpochMs?.let { reset -> reset <= now } == true }, size = 86.dp, strokeWidth = 9.dp)
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            QuotaWindowLine(stringResource(R.string.quota_weekly), usage?.remainingPercent, usage?.resetAtEpochMs, now)
-                            QuotaWindowLine(stringResource(R.string.quota_five_hour), usage?.fiveHourRemainingPercent, usage?.fiveHourResetAtEpochMs, now)
-                            QuotaWindowLine(stringResource(R.string.gpt_reserve), usage?.gptReserveRemainingPercent, usage?.gptReserveResetAtEpochMs, now)
+                            QuotaWindowLine(stringResource(R.string.quota_weekly), usage?.remainingPercent, usage?.resetAtEpochMs, now, status = usage?.status)
+                            QuotaWindowLine(stringResource(R.string.quota_five_hour), usage?.fiveHourRemainingPercent, usage?.fiveHourResetAtEpochMs, now, status = usage?.status)
+                            QuotaWindowLine(stringResource(R.string.gpt_reserve), usage?.gptReserveRemainingPercent, usage?.gptReserveResetAtEpochMs, now, status = usage?.status)
                         }
                     }
                     Spacer(Modifier.height(12.dp))
@@ -107,7 +108,7 @@ fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () ->
             }
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { showReset = true }, enabled = !resetting && !activatingFiveHour && (usage?.bankedResets ?: 0) > 0, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.use_reset)) }
+                    Button(onClick = { showReset = true }, enabled = !resetting && !activatingFiveHour && usage?.status == AuthStatus.AUTHENTICATED && (usage.bankedResets ?: 0) > 0, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.use_reset)) }
                     OutlinedButton(onClick = { showDelete = true }, modifier = Modifier.weight(1f)) { Icon(Icons.Default.Delete, contentDescription = null); Text(stringResource(R.string.remove_account)) }
                 }
             }
@@ -159,7 +160,7 @@ fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () ->
             LabelValue(stringResource(R.string.reset_remaining), ((usage?.bankedResets ?: 1) - 1).toString())
             Text(stringResource(R.string.reset_irreversible), color = MaterialTheme.colorScheme.error)
         }
-    }, confirmButton = { Button(onClick = { showReset = false; viewModel.consumeReset() }, enabled = !resetting) { Text(stringResource(R.string.reset_confirm_action)) } }, dismissButton = { TextButton(onClick = { showReset = false }) { Text(stringResource(R.string.action_cancel)) } })
+    }, confirmButton = { Button(onClick = { showReset = false; viewModel.consumeReset() }, enabled = !resetting && usage?.status == AuthStatus.AUTHENTICATED) { Text(stringResource(R.string.reset_confirm_action)) } }, dismissButton = { TextButton(onClick = { showReset = false }) { Text(stringResource(R.string.action_cancel)) } })
 
     when (val outcome = resetOutcome) {
         is ResetSpendOutcome.Success -> AlertDialog(

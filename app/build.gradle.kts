@@ -42,8 +42,8 @@ android {
         applicationId = "com.codex.quota"
         minSdk = 26
         targetSdk = 35
-        versionCode = 24
-        versionName = "1.0.1"
+        versionCode = 25
+        versionName = "1.0.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

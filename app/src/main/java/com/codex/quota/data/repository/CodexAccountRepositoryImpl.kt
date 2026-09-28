@@ -200,7 +200,14 @@ class CodexAccountRepositoryImpl(
 
         return if (result.isSuccess) {
             val usage = result.getOrThrow()
-            usageSnapshotDao.insertOrUpdate(UsageSnapshotEntity.fromDomain(usage))
+            val savedUsage = if (usage.status == AuthStatus.TEMPORARY_ERROR || usage.status == AuthStatus.OFFLINE) {
+                val previous = usageSnapshotDao.getByAccountId(account.id)?.toDomain()
+                if (previous != null && account.lastSuccessfulSyncEpochMs == previous.fetchedAtEpochMs &&
+                    previous.status in listOf(AuthStatus.AUTHENTICATED, AuthStatus.TEMPORARY_ERROR, AuthStatus.OFFLINE)) {
+                    previous.copy(status = usage.status, errorMessage = usage.errorMessage)
+                } else usage
+            } else usage
+            usageSnapshotDao.insertOrUpdate(UsageSnapshotEntity.fromDomain(savedUsage))
             if (!account.isDemoAccount && usage.status == AuthStatus.AUTHENTICATED) {
                 onUsageRefreshed(usage)
             }
@@ -216,7 +223,7 @@ class CodexAccountRepositoryImpl(
                 authStatus = usage.status.name,
                 lastSync = lastSync
             )
-            Result.success(usage)
+            Result.success(savedUsage)
         } else {
             val exception = result.exceptionOrNull() ?: Exception("Unknown sync error")
             val offlineUsage = CodexUsage.empty(account.id, AuthStatus.TEMPORARY_ERROR)
