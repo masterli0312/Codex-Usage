@@ -53,7 +53,8 @@ fun AccountCard(item: AccountWithUsage, onClick: () -> Unit, onSignInClick: () -
                     CircularQuotaGauge(usage?.remainingPercent?.takeUnless { usage.status != AuthStatus.AUTHENTICATED && usage.resetAtEpochMs?.let { reset -> reset <= now } == true }, size = 82.dp, strokeWidth = 8.dp)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         QuotaWindowLine(stringResource(R.string.quota_weekly), usage?.remainingPercent, usage?.resetAtEpochMs, now, status = usage?.status)
-                        QuotaWindowLine(stringResource(R.string.quota_five_hour), usage?.fiveHourRemainingPercent, usage?.fiveHourResetAtEpochMs, now, status = usage?.status)
+                        QuotaWindowLine(stringResource(R.string.quota_five_hour), usage?.fiveHourRemainingPercent, usage?.fiveHourResetAtEpochMs, now, status = usage?.status,
+                            unavailableReason = if (usage?.isWeeklyQuotaExhausted == true) stringResource(R.string.weekly_quota_exhausted) else null)
                         QuotaWindowLine(stringResource(R.string.gpt_reserve), usage?.gptReserveRemainingPercent, usage?.gptReserveResetAtEpochMs, now, status = usage?.status)
                     }
                 }

@@ -123,7 +123,7 @@ class MediumQuotaWidget : GlanceAppWidget() {
                         ?: data.usage?.rateLimitInfo?.resetTokensDuration)
                     ?: context.getString(R.string.status_active)
                 val primaryLabel = primaryWindow?.window?.let { context.getString(if (it == com.codex.quota.domain.model.QuotaWindow.WEEKLY) R.string.window_weekly else R.string.window_five_hour) } ?: context.getString(R.string.quota_weekly)
-                val secondaryQuotaText = if (data.usage?.fiveHourRemainingPercent != null && primaryWindow?.window == QuotaWindow.WEEKLY) {
+                val secondaryQuotaText = if (data.usage?.isWeeklyQuotaExhausted != true && data.usage?.fiveHourRemainingPercent != null && primaryWindow?.window == QuotaWindow.WEEKLY) {
                     context.getString(R.string.widget_5_hour_percent, formatQuotaPercent(data.usage.fiveHourRemainingPercent))
                 } else {
                     null

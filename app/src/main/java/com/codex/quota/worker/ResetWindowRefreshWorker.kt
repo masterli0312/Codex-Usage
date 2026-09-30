@@ -21,6 +21,7 @@ class ResetWindowRefreshWorker(
         val accountId = inputData.getString(ACCOUNT_ID) ?: return Result.failure()
         val resetAt = inputData.getLong(RESET_AT, 0L)
         val current = app.repository.getAccount(accountId) ?: return Result.success()
+        if (current.usage?.isWeeklyQuotaExhausted == true) return Result.success()
         if (current.account.isDemoAccount || resetAt <= 0L || resetAt > System.currentTimeMillis()) {
             return Result.success()
         }

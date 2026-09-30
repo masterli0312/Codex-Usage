@@ -74,7 +74,8 @@ fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () ->
                         CircularQuotaGauge(usage?.remainingPercent?.takeUnless { usage.status != AuthStatus.AUTHENTICATED && usage.resetAtEpochMs?.let { reset -> reset <= now } == true }, size = 86.dp, strokeWidth = 9.dp)
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             QuotaWindowLine(stringResource(R.string.quota_weekly), usage?.remainingPercent, usage?.resetAtEpochMs, now, status = usage?.status)
-                            QuotaWindowLine(stringResource(R.string.quota_five_hour), usage?.fiveHourRemainingPercent, usage?.fiveHourResetAtEpochMs, now, status = usage?.status)
+                            QuotaWindowLine(stringResource(R.string.quota_five_hour), usage?.fiveHourRemainingPercent, usage?.fiveHourResetAtEpochMs, now, status = usage?.status,
+                                unavailableReason = if (usage?.isWeeklyQuotaExhausted == true) stringResource(R.string.weekly_quota_exhausted) else null)
                             QuotaWindowLine(stringResource(R.string.gpt_reserve), usage?.gptReserveRemainingPercent, usage?.gptReserveResetAtEpochMs, now, status = usage?.status)
                         }
                     }
@@ -88,12 +89,14 @@ fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () ->
                     if (usage?.errorMessage == CF_BLOCKED_ERROR) {
                         Text(stringResource(R.string.node_blocked_message), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                     }
-                    Spacer(Modifier.height(8.dp))
-                    OutlinedButton(
-                        onClick = { showFiveHourActivation = true },
-                        enabled = canActivateFiveHour && !activatingFiveHour && !refreshing && !resetting,
-                        modifier = Modifier.fillMaxWidth()
-                    ) { Text(stringResource(R.string.activate_five_hour_now)) }
+                    if (usage?.isWeeklyQuotaExhausted != true) {
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedButton(
+                            onClick = { showFiveHourActivation = true },
+                            enabled = canActivateFiveHour && !activatingFiveHour && !refreshing && !resetting,
+                            modifier = Modifier.fillMaxWidth()
+                        ) { Text(stringResource(R.string.activate_five_hour_now)) }
+                    }
                 }
             }
             item {
@@ -135,7 +138,7 @@ fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () ->
             title = { Text(stringResource(R.string.activate_five_hour_success_title)) },
             text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(stringResource(if (outcome.freshUsage == null) R.string.activate_five_hour_refresh_pending else R.string.activate_five_hour_success_message))
-                LabelValue(stringResource(R.string.quota_five_hour), formatQuotaPercent(outcome.freshUsage?.fiveHourRemainingPercent))
+                LabelValue(stringResource(R.string.quota_five_hour), if (outcome.freshUsage?.isWeeklyQuotaExhausted == true) stringResource(R.string.weekly_quota_exhausted) else formatQuotaPercent(outcome.freshUsage?.fiveHourRemainingPercent))
             } },
             confirmButton = { TextButton(onClick = viewModel::clearFiveHourActivationOutcome) { Text(stringResource(R.string.action_got_it)) } }
         )
@@ -158,8 +161,7 @@ fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () ->
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.reset_consumes_one))
             Text(stringResource(R.string.reset_after_label), fontWeight = FontWeight.Bold)
-            LabelValue(stringResource(R.string.quota_weekly), stringResource(R.string.value_unavailable))
-            LabelValue(stringResource(R.string.quota_five_hour), stringResource(R.string.value_unavailable))
+            LabelValue(stringResource(R.string.quota_weekly), stringResource(R.string.reset_weekly_preview, formatQuotaPercent(100.0)))
             LabelValue(stringResource(R.string.gpt_reserve), stringResource(R.string.reset_reserve_unaffected))
             LabelValue(stringResource(R.string.reset_remaining), ((usage?.bankedResets ?: 1) - 1).toString())
             Text(stringResource(R.string.reset_irreversible), color = MaterialTheme.colorScheme.error)
@@ -173,7 +175,6 @@ fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () ->
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     LabelValue(stringResource(R.string.quota_weekly), formatQuotaPercent(outcome.freshUsage?.remainingPercent))
-                    LabelValue(stringResource(R.string.quota_five_hour), formatQuotaPercent(outcome.freshUsage?.fiveHourRemainingPercent))
                     LabelValue(stringResource(R.string.gpt_reserve), formatQuotaPercent(outcome.freshUsage?.gptReserveRemainingPercent))
                     LabelValue(stringResource(R.string.reset_remaining), outcome.freshUsage?.bankedResets?.toString() ?: stringResource(R.string.value_unavailable))
                     Text(stringResource(if (outcome.freshUsage == null) R.string.reset_success_refresh_failed else R.string.reset_success_refresh_note))

@@ -219,6 +219,7 @@ fun AppNavigation(
                     SettingsViewModel(app.preferencesRepository, app.repository)
                 }
                 SettingsScreen(settingsViewModel, page = backStackEntry.arguments?.getString("page").orEmpty(),
+                    onNavigate = { navController.navigate(Screen.SettingsPage.createRoute(it)) },
                     onNavigateBack = { navController.popBackStack() })
             }
 

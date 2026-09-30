@@ -98,7 +98,7 @@ class QuotaRefreshWorker(
                 }
 
                 // 2. 5-hour evaluation (only for non-API subscriber accounts if includeFiveHourQuotaAlerts is enabled)
-                if (preferences.includeFiveHourQuotaAlerts && !isApiAccount) {
+                if (preferences.includeFiveHourQuotaAlerts && !isApiAccount && !usage.isWeeklyQuotaExhausted) {
                     val fiveHourRemaining = usage.fiveHourRemainingPercent
                     if (fiveHourRemaining != null) {
                         evaluateQuotaAlertForWindow(

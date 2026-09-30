@@ -7,6 +7,8 @@
 
     <!-- Notifications for signed-out and quota threshold alerts -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
     <!-- Background synchronization via WorkManager -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
@@ -22,6 +24,23 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.CodexQuota">
+
+        <service android:name=".notifications.task.TaskCompletionService"
+            android:exported="false" android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="User-enabled persistent connection receiving Codex task notifications without Google Play Services" />
+        </service>
+        <provider android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.task-notification-files"
+            android:exported="false" android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/task_notification_file_paths" />
+        </provider>
+        <receiver android:name=".notifications.task.TaskNotificationBootReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
 
         <!-- AppCompat persists the selected app language on Android 12 and earlier. -->
         <service

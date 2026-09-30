@@ -25,6 +25,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.codex.quota.CodexQuotaApplication
 import com.codex.quota.domain.model.UserPreferences
+import com.codex.quota.notifications.task.TaskCompletionService
 import com.codex.quota.ui.navigation.AppNavigation
 import com.codex.quota.ui.navigation.Screen
 import com.codex.quota.ui.theme.CodexQuotaTheme
@@ -106,6 +107,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
+        TaskCompletionService.startIfEnabled(this)
         val app = application as CodexQuotaApplication
         lifecycleScope.launch {
             val preferences = runCatching {

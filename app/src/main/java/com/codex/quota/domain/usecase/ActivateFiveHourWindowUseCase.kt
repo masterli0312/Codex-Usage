@@ -42,6 +42,7 @@ class ActivateFiveHourWindowUseCase(
         if (usageBeforeActivation.status != AuthStatus.AUTHENTICATED) {
             return FiveHourActivationOutcome.LoginRequired
         }
+        if (usageBeforeActivation.isWeeklyQuotaExhausted) return FiveHourActivationOutcome.NotDue
         // A newer reset timestamp means this window has already rolled over and started.
         if (usageBeforeActivation.fiveHourResetAtEpochMs?.let { it > resetAtEpochMs } == true) {
             return FiveHourActivationOutcome.NotDue

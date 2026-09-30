@@ -69,14 +69,14 @@ class CodexQuotaApplication : Application() {
                     val prefs = preferencesRepository.getPreferences()
                     if (prefs.fiveHourResetReminderEnabled) {
                         WorkScheduler.scheduleFiveHourResetReminder(
-                            this@CodexQuotaApplication, usage.accountId, usage.fiveHourResetAtEpochMs
+                            this@CodexQuotaApplication, usage.accountId, usage
                         )
                     }
                     if (prefs.backgroundSyncEnabled) {
                         WorkScheduler.scheduleFiveHourResetRefresh(
                             this@CodexQuotaApplication,
                             usage.accountId,
-                            usage.fiveHourResetAtEpochMs
+                            usage
                         )
                     }
                 }
@@ -97,7 +97,7 @@ class CodexQuotaApplication : Application() {
                     if (!item.account.isDemoAccount) {
                         WorkScheduler.scheduleFiveHourResetReminder(
                             this@CodexQuotaApplication, item.account.id,
-                            item.usage?.fiveHourResetAtEpochMs
+                            item.usage
                         )
                     }
                 }
@@ -111,7 +111,7 @@ class CodexQuotaApplication : Application() {
                         WorkScheduler.scheduleFiveHourResetRefresh(
                             this@CodexQuotaApplication,
                             item.account.id,
-                            item.usage?.fiveHourResetAtEpochMs,
+                            item.usage,
                             includeOverdue = item.account.id in prefs.autoActivateFiveHourAccountIds
                         )
                     }

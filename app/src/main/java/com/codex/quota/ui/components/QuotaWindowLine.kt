@@ -41,7 +41,14 @@ fun rememberQuotaClock(): Long {
 }
 
 @Composable
-fun QuotaWindowLine(label: String, percent: Double?, resetAtEpochMs: Long?, now: Long, modifier: Modifier = Modifier, status: AuthStatus? = null) {
+fun QuotaWindowLine(label: String, percent: Double?, resetAtEpochMs: Long?, now: Long, modifier: Modifier = Modifier, status: AuthStatus? = null, unavailableReason: String? = null) {
+    if (unavailableReason != null) {
+        Column(modifier, verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
+            Text(unavailableReason, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        return
+    }
     val context = LocalContext.current
     val displayedPercent = if (status != null && status != AuthStatus.AUTHENTICATED &&
         resetAtEpochMs != null && resetAtEpochMs <= now) null else percent

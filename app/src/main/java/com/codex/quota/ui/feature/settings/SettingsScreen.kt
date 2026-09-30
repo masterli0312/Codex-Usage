@@ -48,6 +48,7 @@ private val entries = listOf(
     SettingEntry("notifications", R.string.notifications_alerts, R.string.notifications_summary, Icons.Outlined.Notifications),
     SettingEntry("privacy", R.string.privacy_local_storage, R.string.privacy_summary, Icons.Outlined.Lock)
 )
+private val pages = entries + SettingEntry("task_notifications", R.string.task_notification_title, R.string.task_notification_summary)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,8 +61,8 @@ fun SettingsScreen(viewModel: SettingsViewModel, modifier: Modifier = Modifier, 
     fun notificationPermission() {
         if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
-    val currentPage = page.takeIf { it == "home" || entries.any { entry -> entry.page == it } } ?: "home"
-    val title = if (currentPage == "home") R.string.settings_title else entries.first { it.page == currentPage }.title
+    val currentPage = page.takeIf { it == "home" || pages.any { entry -> entry.page == it } } ?: "home"
+    val title = if (currentPage == "home") R.string.settings_title else pages.first { it.page == currentPage }.title
     Scaffold(modifier = modifier.fillMaxSize(), topBar = { TopAppBar(title = { Text(stringResource(title), fontWeight = FontWeight.Bold) }, navigationIcon = { if (page != "home") IconButton(onClick = onNavigateBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back)) } }) }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             when (currentPage) {
@@ -124,6 +125,9 @@ fun SettingsScreen(viewModel: SettingsViewModel, modifier: Modifier = Modifier, 
                     }
                 }
                 "notifications" -> {
+                    OutlinedButton(onClick = { onNavigate("task_notifications") }, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.task_notification_title))
+                    }
                     ToggleRow(stringResource(R.string.low_quota_warnings), stringResource(R.string.alerts_when_an_account_reaches_critical_quota_thresholds), preferences.quotaAlertsEnabled, { if (it) notificationPermission(); viewModel.setQuotaAlertsEnabled(it) })
                     ToggleRow(stringResource(R.string.five_hour_warning), stringResource(R.string.five_hour_warning_summary), preferences.includeFiveHourQuotaAlerts, { if (it) notificationPermission(); viewModel.setIncludeFiveHourQuotaAlerts(it) })
                     ToggleRow(stringResource(R.string.five_hour_reset_reminder), stringResource(R.string.five_hour_reset_reminder_summary), preferences.fiveHourResetReminderEnabled, { if (it) notificationPermission(); viewModel.setFiveHourResetReminderEnabled(context, it) })
@@ -143,11 +147,12 @@ fun SettingsScreen(viewModel: SettingsViewModel, modifier: Modifier = Modifier, 
                     OutlinedButton(onClick = { showClearData = true }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.outlinedButtonColors(contentColor = Red500)) { Icon(Icons.Default.DeleteForever, contentDescription = null); Spacer(Modifier.width(8.dp)); Text(stringResource(R.string.clear_all_local_data_secrets)) }
                     Text(stringResource(R.string.clear_data_detail), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
+                "task_notifications" -> TaskNotificationSettingsPanel()
             }
             Spacer(Modifier.height(16.dp))
         }
     }
-    if (showClearData) AlertDialog(onDismissRequest = { showClearData = false }, title = { Text(stringResource(R.string.clear_all_data)) }, text = { Text(stringResource(R.string.this_will_permanently_delete_all_registered_accounts_cached_usage)) }, confirmButton = { TextButton(onClick = { showClearData = false; viewModel.clearAllData() }) { Text(stringResource(R.string.clear_everything), color = Red500) } }, dismissButton = { TextButton(onClick = { showClearData = false }) { Text(stringResource(R.string.action_cancel)) } })
+    if (showClearData) AlertDialog(onDismissRequest = { showClearData = false }, title = { Text(stringResource(R.string.clear_all_data)) }, text = { Text(stringResource(R.string.this_will_permanently_delete_all_registered_accounts_cached_usage)) }, confirmButton = { TextButton(onClick = { showClearData = false; viewModel.clearAllData(context) }) { Text(stringResource(R.string.clear_everything), color = Red500) } }, dismissButton = { TextButton(onClick = { showClearData = false }) { Text(stringResource(R.string.action_cancel)) } })
 }
 
 @Composable

@@ -1,4 +1,29 @@
 <resources>
+    <string name="task_notification_title">Codex 任务完成提醒</string>
+    <string name="task_notification_summary">首次配对电脑后，Codex 每轮任务结束时自动提醒。</string>
+    <string name="task_connection_channel">任务通知接收连接</string>
+    <string name="task_connection_off">任务提醒已关闭</string>
+    <string name="task_connecting">正在连接通知服务…</string>
+    <string name="task_connected">已连接，等待 Codex 任务消息</string>
+    <string name="task_reconnecting">连接已断开，正在自动重连</string>
+    <string name="task_start_failed">请开启系统通知权限，再重新打开此开关。</string>
+    <string name="task_turn_ended">Codex 本轮任务已结束</string>
+    <string name="task_attention_error">Codex 遇到错误或额度限制</string>
+    <string name="task_attention_input">Codex 需要你处理</string>
+    <string name="task_test_received">已收到电脑配对测试消息</string>
+    <string name="task_notification_body">%1$s · %2$s</string>
+    <string name="task_pairing_title">配对 Windows 电脑</string>
+    <string name="task_pairing_steps">1. 打开上方任务提醒开关。\n2. 将安装 ZIP 分享到电脑并解压。\n3. 双击 setup.cmd，完成后重启 Codex。\n电脑需在 Codex 执行任务期间保持运行。每次安装 App 都有独立的配对地址。</string>
+    <string name="task_export_installer">分享电脑安装包</string>
+    <string name="task_export_failed">无法分享安装包，请重试。</string>
+    <string name="task_pairing_address">私有配对地址</string>
+    <string name="task_copy_address">复制配对地址</string>
+    <string name="task_background_settings">允许后台运行</string>
+    <string name="task_background_detail">通过常驻通知保持连接，不依赖 Google 服务。请允许本应用后台运行，并取消电池优化限制。Android 或手机省电管理仍可能延迟通知；强行停止 App 后将停止接收。</string>
+    <string name="task_privacy_detail">此功能按需开启，经 ntfy 转发任务事件信息；不会发送 OpenAI Token、提示词、回复正文或文件内容。请保管好配对地址与安装包。本轮任务结束不代表所有要求都已成功完成。</string>
+    <string name="task_change_address">更换配对地址</string>
+    <string name="task_address_invalid">请输入 HTTPS 格式的 ntfy 主题地址，不要包含密码、查询参数或片段。</string>
+    <string name="action_save">保存</string>
     <string name="auto_activate_five_hour">自动激活下一个 5 小时窗口</string>
     <string name="auto_activate_five_hour_summary">按账号选择：重置后发送一条简短的 Codex 请求，会消耗额度并需要网络；旧账号可能需要重新通过 OAuth 登录。Android 可能延迟后台执行。默认关闭。</string>
     <string name="auto_activate_five_hour_no_accounts">添加 ChatGPT 账号后即可选择自动激活的账号。</string>
@@ -27,6 +52,7 @@
     <string name="reset_confirm_title">使用 Reset 机会？</string>
     <string name="reset_consumes_one">这将消耗 1 次 Reset 机会。</string>
     <string name="reset_after_label">重置后将变为</string>
+    <string name="reset_weekly_preview">预计 %1$s</string>
     <string name="reset_remaining">剩余 Reset</string>
     <string name="reset_unsupported">当前数据源不支持安全地使用 Reset；尚未执行任何操作。</string>
     <string name="reset_confirm_action">确认使用 Reset</string>
@@ -50,7 +76,7 @@
     <string name="five_hour_warning">5 小时额度即将提醒</string>
     <string name="five_hour_warning_summary">5 小时额度即将耗尽时提醒</string>
     <string name="five_hour_reset_reminder">5 小时重置提醒</string>
-    <string name="five_hour_reset_reminder_summary">按各账号的官方重置时间，提前约 5 分钟通知；Android 后台执行可能延迟。</string>
+    <string name="five_hour_reset_reminder_summary">仅在该账号仍有 7 天额度时，按官方重置时间提前约 5 分钟通知；Android 后台执行可能延迟。</string>
     <string name="five_hour_reset_channel">5 小时重置提醒</string>
     <string name="five_hour_reset_notification_title">5 小时额度即将重置</string>
     <string name="five_hour_reset_notification_text">%1$s：5 小时额度约 5 分钟后重置。</string>
@@ -69,7 +95,7 @@
     <string name="local_encryption">本地加密</string>
     <string name="local_encryption_detail">凭据加密存储于本地（Android Keystore）</string>
     <string name="no_cloud_relay">无云端中转</string>
-    <string name="no_cloud_relay_detail">应用通过 HTTPS 直接访问 OpenAI API</string>
+    <string name="no_cloud_relay_detail">额度请求通过 HTTPS 直连 OpenAI。可选的任务提醒经 ntfy 转发事件信息，不会向其发送 OpenAI 凭据。</string>
     <string name="clear_data_detail">此操作会删除所有账号、配置、缓存及本地密钥，且无法恢复。</string>
 
     <string name="language_title">语言</string>
@@ -401,4 +427,5 @@
     <string name="zero_telemetry_no_trackers_third_party_analytics_or_crash_logging">• 零遥测：无追踪、第三方分析或崩溃日志。\n• 硬件加密：凭据保存在 Android Keystore 中，并使用 AES-256-GCM 加密。\n• 直接 HTTPS 通信：应用仅与 OpenAI 服务器通信。</string>
     <string name="codex_quota_is_an_independent_utility_designed_for_developers_to_">Codex Quota 是一款供开发者查看速率限制和订阅周期的独立工具。此应用与 OpenAI, Inc. 没有关联，也未经其维护、授权、赞助或认可。\n\nOpenAI、ChatGPT 和 Codex 是 OpenAI, Inc. 的商标。</string>
     <string name="zero_telemetry_no_analytics_tracking_or_remote_error_reporting_n_">• 零遥测：无分析、追踪或远程错误报告。\n• 硬件加密：凭据通过 Android Keystore 和 AES-256-GCM 保护。\n• 无云端中转：应用仅通过 HTTPS 直接访问 OpenAI API。</string>
+    <string name="weekly_quota_exhausted">7 天额度已用尽</string>
 </resources>

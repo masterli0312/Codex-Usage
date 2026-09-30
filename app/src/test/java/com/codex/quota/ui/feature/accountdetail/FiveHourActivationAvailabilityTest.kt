@@ -10,6 +10,20 @@ class FiveHourActivationAvailabilityTest {
     private val now = 1_000_000_000L
 
     @Test
+    fun exhaustedWeeklyQuotaDisablesActivationEvenWithAFullExpiredFiveHourWindow() {
+        val usage = usageWithReset(now - 60_000L).copy(remainingPercent = 0.0)
+        assertFalse(canActivateFiveHourWindow(usage, now))
+    }
+
+    @Test
+    fun exhaustedAccountDoesNotDisableAnotherAccount() {
+        val exhausted = usageWithReset(now - 60_000L).copy(remainingPercent = 0.0)
+        val available = exhausted.copy(accountId = "account-2", remainingPercent = 50.0)
+        assertFalse(canActivateFiveHourWindow(exhausted, now))
+        assertTrue(canActivateFiveHourWindow(available, now))
+    }
+
+    @Test
     fun newWindowWithFullQuotaIsAlreadyActive() {
         val usage = usageWithReset(now + 4 * 60 * 60_000L)
         assertFalse(canActivateFiveHourWindow(usage, now))

@@ -117,7 +117,7 @@ class SmallQuotaWidget : GlanceAppWidget() {
                     ?: data.usage?.rateLimitInfo?.resetTokensDuration
                     ?: context.getString(R.string.status_active)
                 val subtitle = if (primaryWindow?.window == QuotaWindow.WEEKLY) context.getString(R.string.widget_weekly_left) else context.getString(R.string.widget_quota_left)
-                val fiveHourLine = data.usage?.fiveHourRemainingPercent?.let { context.getString(R.string.widget_5_hour_percent, formatQuotaPercent(it)) }
+                val fiveHourLine = data.usage?.takeUnless { it.isWeeklyQuotaExhausted }?.fiveHourRemainingPercent?.let { context.getString(R.string.widget_5_hour_percent, formatQuotaPercent(it)) }
 
                 val dotColor = try {
                     Color(android.graphics.Color.parseColor(data.account.colorHex))

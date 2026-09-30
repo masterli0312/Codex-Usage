@@ -26,6 +26,10 @@ data class CodexUsage(
     val gptReserveRemainingPercent: Double? = null,
     val gptReserveResetAtEpochMs: Long? = null
 ) {
+    // Keep provider values intact; presentation and activation respect the weekly restriction.
+    val isWeeklyQuotaExhausted: Boolean
+        get() = remainingPercent?.let { it.isFinite() && it <= 0.0 } == true
+
     val isStale: Boolean
         get() = (System.currentTimeMillis() - fetchedAtEpochMs) > STALE_THRESHOLD_MS
 

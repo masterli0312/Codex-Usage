@@ -1,4 +1,29 @@
 <resources>
+    <string name="task_notification_title">Codex task notifications</string>
+    <string name="task_notification_summary">Pair a computer once to receive alerts when a Codex turn ends.</string>
+    <string name="task_connection_channel">Task notification connection</string>
+    <string name="task_connection_off">Notifications are off</string>
+    <string name="task_connecting">Connecting to the notification service…</string>
+    <string name="task_connected">Connected · waiting for Codex events</string>
+    <string name="task_reconnecting">Disconnected · reconnecting automatically</string>
+    <string name="task_start_failed">Enable system notifications, then turn this setting on again.</string>
+    <string name="task_turn_ended">Codex finished this turn</string>
+    <string name="task_attention_error">Codex reported an error or usage limit</string>
+    <string name="task_attention_input">Codex needs your attention</string>
+    <string name="task_test_received">Computer pairing test received</string>
+    <string name="task_notification_body">%1$s · %2$s</string>
+    <string name="task_pairing_title">Pair your Windows computer</string>
+    <string name="task_pairing_steps">1. Turn on notifications above.\n2. Share the setup ZIP with your computer and extract it.\n3. Double-click setup.cmd, then restart Codex.\nThe computer must stay awake while Codex works. Each app installation has its own pairing address.</string>
+    <string name="task_export_installer">Share computer setup ZIP</string>
+    <string name="task_export_failed">Could not share the setup ZIP. Try again.</string>
+    <string name="task_pairing_address">Private pairing address</string>
+    <string name="task_copy_address">Copy pairing address</string>
+    <string name="task_background_settings">Allow background operation</string>
+    <string name="task_background_detail">A persistent notification keeps the connection running without Google Play Services. Allow this app to run in the background and exclude it from battery optimization. Android or your phone’s battery management may still delay delivery; force-stopping the app stops reception.</string>
+    <string name="task_privacy_detail">This optional feature relays task event metadata through ntfy. No OpenAI tokens, prompts, assistant replies, or file contents are sent. Keep your pairing address and setup ZIP private. A turn ending does not guarantee that every requested task succeeded.</string>
+    <string name="task_change_address">Change pairing address</string>
+    <string name="task_address_invalid">Enter an HTTPS ntfy topic address, without a password, query, or fragment.</string>
+    <string name="action_save">Save</string>
     <string name="auto_activate_five_hour">Activate the next 5-hour window</string>
     <string name="auto_activate_five_hour_summary">Choose accounts for one small Codex request after reset. Uses quota and requires network; older accounts may need OAuth sign-in again. Android may delay background work. Off by default.</string>
     <string name="auto_activate_five_hour_no_accounts">Add a ChatGPT account to choose automatic activation.</string>
@@ -27,6 +52,7 @@
     <string name="reset_confirm_title">Use a Reset opportunity?</string>
     <string name="reset_consumes_one">This will consume one available Reset.</string>
     <string name="reset_after_label">After reset</string>
+    <string name="reset_weekly_preview">%1$s (expected)</string>
     <string name="reset_remaining">Remaining Reset</string>
     <string name="reset_unsupported">Reset redemption is not supported by the current data source. No action has been taken.</string>
     <string name="reset_confirm_action">Confirm Reset</string>
@@ -50,7 +76,7 @@
     <string name="five_hour_warning">5-hour quota warning</string>
     <string name="five_hour_warning_summary">Warn when the 5-hour quota is low</string>
     <string name="five_hour_reset_reminder">5-hour reset reminder</string>
-    <string name="five_hour_reset_reminder_summary">Notify about 5 minutes before each account’s official reset time. Android may delay background notifications.</string>
+    <string name="five_hour_reset_reminder_summary">Notify about 5 minutes before each account’s official reset time, only while weekly quota remains. Android may delay background notifications.</string>
     <string name="five_hour_reset_channel">5-hour reset reminders</string>
     <string name="five_hour_reset_notification_title">5-hour quota resets soon</string>
     <string name="five_hour_reset_notification_text">%1$s: 5-hour quota is due to reset in about 5 minutes.</string>
@@ -69,7 +95,7 @@
     <string name="local_encryption">Local encryption</string>
     <string name="local_encryption_detail">Credentials are encrypted with Android Keystore</string>
     <string name="no_cloud_relay">No cloud relay</string>
-    <string name="no_cloud_relay_detail">The app connects directly to OpenAI API over HTTPS</string>
+    <string name="no_cloud_relay_detail">Quota requests connect directly to OpenAI over HTTPS. Optional task notifications relay event metadata through ntfy; OpenAI credentials are never sent to it.</string>
     <string name="clear_data_detail">This removes accounts, settings, cache and local keys. It cannot be undone.</string>
 
     <string name="language_title">Language</string>
@@ -407,4 +433,5 @@
     <string name="zero_telemetry_no_trackers_third_party_analytics_or_crash_logging">• Zero Telemetry: No trackers, third-party analytics, or crash logging.\n• Hardware Encryption: Credentials isolated in Android Keystore AES-256-GCM.\n• Direct HTTPS Communication: App communicates exclusively with OpenAI servers.</string>
     <string name="codex_quota_is_an_independent_utility_designed_for_developers_to_">Codex Quota is an independent utility designed for developers to monitor rate limits and subscription windows. This application is NOT affiliated with, maintained, authorized, sponsored, or endorsed by OpenAI, Inc.\n\nOpenAI, ChatGPT, and Codex are trademarks of OpenAI, Inc.</string>
     <string name="zero_telemetry_no_analytics_tracking_or_remote_error_reporting_n_">• Zero Telemetry: No analytics, tracking, or remote error reporting.\n• Hardware Encryption: Credentials isolated in Android Keystore AES-256-GCM.\n• No Cloud Relay: App communicates directly with OpenAI APIs exclusively over HTTPS.</string>
+    <string name="weekly_quota_exhausted">7-day quota exhausted</string>
 </resources>

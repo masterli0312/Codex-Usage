@@ -39,6 +39,27 @@ class ActivateFiveHourWindowUseCaseTest {
     fun tearDown() { unmockkObject(JwtTokenParser) }
 
     @Test
+    fun exhaustedWeeklyQuotaDoesNotActivateAFullFiveHourWindow() = runTest {
+        val activator = mockk<CodexWindowActivator>()
+        coEvery { activator.activate("token", "chatgpt-account") } returns Result.success(Unit)
+        val exhausted = usage.copy(remainingPercent = 0.0, fiveHourRemainingPercent = 100.0)
+
+        assertEquals(FiveHourActivationOutcome.NotDue, createUseCase(activator, exhausted)(accountId, resetAt))
+        coVerify(exactly = 0) { activator.activate(any(), any()) }
+    }
+
+    @Test
+    fun restoredWeeklyQuotaCanActivateWithoutClearingTheAccountPreference() = runTest {
+        val activator = mockk<CodexWindowActivator>()
+        coEvery { activator.activate("token", "chatgpt-account") } returns Result.success(Unit)
+        val exhausted = usage.copy(remainingPercent = 0.0)
+        val restored = usage.copy(remainingPercent = 100.0)
+
+        assertTrue(createUseCase(activator, restored, exhausted)(accountId, resetAt) is FiveHourActivationOutcome.Success)
+        coVerify(exactly = 1) { activator.activate("token", "chatgpt-account") }
+    }
+
+    @Test
     fun completedRequestIsSentOnlyOnceForTheSameWindow() = runTest {
         val activator = mockk<CodexWindowActivator>()
         coEvery { activator.activate("token", "chatgpt-account") } returns Result.success(Unit)
@@ -99,10 +120,11 @@ class ActivateFiveHourWindowUseCaseTest {
 
     private fun createUseCase(
         activator: CodexWindowActivator,
-        refreshedUsage: CodexUsage = usage
+        refreshedUsage: CodexUsage = usage,
+        cachedUsage: CodexUsage = usage
     ): ActivateFiveHourWindowUseCase {
         val repository = mockk<CodexAccountRepository>()
-        coEvery { repository.getAccount(accountId) } returns AccountWithUsage(account, usage)
+        coEvery { repository.getAccount(accountId) } returns AccountWithUsage(account, cachedUsage)
         coEvery { repository.refreshAccount(accountId) } returns Result.success(refreshedUsage)
         val credentialStore = mockk<CredentialStore>()
         every { credentialStore.getApiKey(accountId) } returns "token"

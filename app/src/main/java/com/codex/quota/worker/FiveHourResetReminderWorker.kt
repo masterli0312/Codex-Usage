@@ -4,11 +4,23 @@ import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.codex.quota.CodexQuotaApplication
+import com.codex.quota.domain.model.AuthStatus
+import com.codex.quota.domain.model.CodexUsage
 import com.codex.quota.domain.model.isApiKeyPlan
 import com.codex.quota.notifications.FiveHourResetNotificationManager
 
 internal fun isFiveHourReminderDue(resetAtEpochMs: Long, nowEpochMs: Long): Boolean =
     nowEpochMs >= resetAtEpochMs - FiveHourResetReminderWorker.LEAD_TIME_MS && nowEpochMs < resetAtEpochMs
+
+internal fun hasWeeklyQuotaForFiveHourReminder(usage: CodexUsage?): Boolean {
+    if (usage?.status != AuthStatus.AUTHENTICATED) return false
+    val remaining = usage.remainingPercent ?: return false
+    return remaining.isFinite() && remaining > 0.0 && remaining <= 100.0
+}
+
+internal fun shouldSendFiveHourResetReminder(usage: CodexUsage?, resetAt: Long, now: Long): Boolean =
+    hasWeeklyQuotaForFiveHourReminder(usage) &&
+        usage?.fiveHourResetAtEpochMs == resetAt && isFiveHourReminderDue(resetAt, now)
 
 class FiveHourResetReminderWorker(
     appContext: Context,
@@ -23,8 +35,7 @@ class FiveHourResetReminderWorker(
 
         val item = app.repository.getAccount(accountId) ?: return Result.success()
         if (item.account.isDemoAccount || item.account.planType.isApiKeyPlan ||
-            item.usage?.fiveHourResetAtEpochMs != resetAt ||
-            !isFiveHourReminderDue(resetAt, System.currentTimeMillis())) return Result.success()
+            !shouldSendFiveHourResetReminder(item.usage, resetAt, System.currentTimeMillis())) return Result.success()
 
         val notifications = FiveHourResetNotificationManager(applicationContext)
         if (!notifications.canNotify()) return Result.success()

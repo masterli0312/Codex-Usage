@@ -9,6 +9,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
+import com.codex.quota.domain.model.CodexUsage
 import java.util.concurrent.TimeUnit
 
 object WorkScheduler {
@@ -16,11 +17,12 @@ object WorkScheduler {
     private const val RESET_REFRESH_TAG = "five_hour_reset_refresh"
     private const val RESET_REMINDER_TAG = "five_hour_reset_reminder"
 
-    fun scheduleFiveHourResetReminder(context: Context, accountId: String, resetAtEpochMs: Long?) {
+    fun scheduleFiveHourResetReminder(context: Context, accountId: String, usage: CodexUsage?) {
         val manager = WorkManager.getInstance(context)
         val name = "$RESET_REMINDER_TAG:$accountId"
         val now = System.currentTimeMillis()
-        if (resetAtEpochMs == null || resetAtEpochMs <= now) {
+        val resetAtEpochMs = usage?.fiveHourResetAtEpochMs
+        if (!hasWeeklyQuotaForFiveHourReminder(usage) || resetAtEpochMs == null || resetAtEpochMs <= now) {
             manager.cancelUniqueWork(name)
             return
         }
@@ -43,9 +45,18 @@ object WorkScheduler {
     fun scheduleFiveHourResetRefresh(
         context: Context,
         accountId: String,
-        resetAtEpochMs: Long?,
+        usage: CodexUsage?,
         includeOverdue: Boolean = false
     ) {
+        val manager = WorkManager.getInstance(context)
+        val accountTag = "$RESET_REFRESH_TAG:$accountId"
+        if (usage?.isWeeklyQuotaExhausted == true) {
+            manager.cancelAllWorkByTag(accountTag)
+            // Also cancel jobs scheduled by earlier app versions without the account tag.
+            usage.fiveHourResetAtEpochMs?.let { manager.cancelUniqueWork("$accountTag:$it") }
+            return
+        }
+        val resetAtEpochMs = usage?.fiveHourResetAtEpochMs
         val now = System.currentTimeMillis()
         if (resetAtEpochMs == null || resetAtEpochMs <= 0L ||
             (resetAtEpochMs <= now && !includeOverdue)) return
@@ -60,10 +71,11 @@ object WorkScheduler {
                 ResetWindowRefreshWorker.RESET_AT to resetAtEpochMs
             ))
             .addTag(RESET_REFRESH_TAG)
+            .addTag(accountTag)
             .build()
 
         // Include the window boundary so a refreshed window never cancels its running predecessor.
-        WorkManager.getInstance(context).enqueueUniqueWork(
+        manager.enqueueUniqueWork(
             "$RESET_REFRESH_TAG:$accountId:$resetAtEpochMs",
             ExistingWorkPolicy.KEEP,
             request

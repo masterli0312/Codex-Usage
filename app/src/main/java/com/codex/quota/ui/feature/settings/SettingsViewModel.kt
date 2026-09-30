@@ -12,6 +12,8 @@ import com.codex.quota.domain.repository.CodexAccountRepository
 import com.codex.quota.domain.repository.UserPreferencesRepository
 import com.codex.quota.widget.WidgetUpdateHelper
 import com.codex.quota.worker.WorkScheduler
+import com.codex.quota.notifications.task.TaskCompletionService
+import com.codex.quota.notifications.task.TaskNotificationStore
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -60,7 +62,7 @@ class SettingsViewModel(
                 accountRepository.getAllAccounts().forEach { item ->
                     if (!item.account.isDemoAccount) {
                         WorkScheduler.scheduleFiveHourResetRefresh(
-                            context, item.account.id, item.usage?.fiveHourResetAtEpochMs,
+                            context, item.account.id, item.usage,
                             includeOverdue = item.account.id in preferences.autoActivateFiveHourAccountIds
                         )
                     }
@@ -78,7 +80,7 @@ class SettingsViewModel(
             if (enabled && preferencesRepository.getPreferences().backgroundSyncEnabled) {
                 val account = accountRepository.getAccount(accountId)
                 WorkScheduler.scheduleFiveHourResetRefresh(
-                    context, accountId, account?.usage?.fiveHourResetAtEpochMs,
+                    context, accountId, account?.usage,
                     includeOverdue = true
                 )
             }
@@ -125,7 +127,7 @@ class SettingsViewModel(
                 accountRepository.getAllAccounts().forEach { item ->
                     if (!item.account.isDemoAccount) {
                         WorkScheduler.scheduleFiveHourResetReminder(
-                            context, item.account.id, item.usage?.fiveHourResetAtEpochMs
+                            context, item.account.id, item.usage
                         )
                     }
                 }
@@ -153,9 +155,11 @@ class SettingsViewModel(
         }
     }
 
-    fun clearAllData() {
+    fun clearAllData(context: Context) {
         viewModelScope.launch {
             if (accountRepository.clearAllData().isSuccess) {
+                TaskNotificationStore(context).clear()
+                TaskCompletionService.stop(context)
                 // Any queued reminder becomes invalid when its account is gone.
                 preferencesRepository.getPreferences().autoActivateFiveHourAccountIds.forEach { accountId ->
                     preferencesRepository.setAutoActivateFiveHourAccount(accountId, false)
