@@ -140,7 +140,7 @@ private fun exportInstaller(context: Context, endpoint: String): File {
     val dir = File(context.cacheDir, "task-notifications").apply { mkdirs() }
     val output = File(dir, "Codex-Usage-Windows-Setup.zip")
     ZipOutputStream(output.outputStream()).use { zip ->
-        for (name in listOf("Install.ps1", "notify.cjs", "setup.cmd")) {
+        for (name in listOf("Install.ps1", "notify.cjs", "setup.cmd", "NotificationLauncher.cs")) {
             zip.putNextEntry(ZipEntry(name))
             context.assets.open("task-notifications/$name").use { it.copyTo(zip) }
             zip.closeEntry()

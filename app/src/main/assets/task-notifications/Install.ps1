@@ -23,10 +23,20 @@ function Set-Notify([string]$Text, [array]$Command) {
     return $line + "`r`n" + $Text
 }
 
+function Test-OwnNotify([array]$Command, [string]$NotifyScript) {
+    $expected = [IO.Path]::GetFullPath($NotifyScript)
+    foreach ($argument in $Command) {
+        try {
+            if ([string]::Equals([IO.Path]::GetFullPath([string]$argument), $expected, [StringComparison]::OrdinalIgnoreCase)) { return $true }
+        } catch { }
+    }
+    return $false
+}
+
 $oldText = if (Test-Path -LiteralPath $configFile) { [IO.File]::ReadAllText($configFile) } else { '' }
 $oldNotify = Read-Notify $oldText
 if ($Uninstall) {
-    if ((Test-Path -LiteralPath $connectionFile) -and ($oldNotify -contains $scriptPath)) {
+    if ((Test-Path -LiteralPath $connectionFile) -and (Test-OwnNotify $oldNotify $scriptPath)) {
         $saved = Get-Content -LiteralPath $connectionFile -Raw | ConvertFrom-Json
         [IO.File]::WriteAllText($configFile, (Set-Notify $oldText @($saved.previousNotify)), [Text.UTF8Encoding]::new($false))
     }
@@ -54,8 +64,19 @@ if (-not $node) { throw 'Install Node.js 18 or newer from nodejs.org, then run s
 & $node -e 'if (Number(process.versions.node.split(".")[0]) < 18) process.exit(1)'
 if ($LASTEXITCODE -ne 0) { throw 'Node.js 18 or newer is required.' }
 New-Item -ItemType Directory -Path $runtime -Force | Out-Null
+$launcherSource = Join-Path $PSScriptRoot 'NotificationLauncher.cs'
+if (-not (Test-Path -LiteralPath $launcherSource)) { throw 'Extract the latest setup ZIP shared by Codex Usage first.' }
+$sourceHash = (Get-FileHash -LiteralPath $launcherSource -Algorithm SHA256).Hash.Substring(0,16)
+$launcherPath = Join-Path $runtime ('NotificationLauncher-' + $sourceHash + '.exe')
+if (-not (Test-Path -LiteralPath $launcherPath)) {
+    $compiler = @('Microsoft.NET/Framework64/v4.0.30319/csc.exe', 'Microsoft.NET/Framework/v4.0.30319/csc.exe') |
+        ForEach-Object { Join-Path $env:WINDIR $_ } | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+    if (-not $compiler) { throw 'The Windows .NET Framework compiler is unavailable. Existing Codex settings have not been changed.' }
+    & $compiler /nologo /target:winexe ('/out:' + $launcherPath) $launcherSource
+    if ($LASTEXITCODE -ne 0) { throw 'Could not build the windowless launcher. Existing Codex settings have not been changed.' }
+}
 $previousNotify = $oldNotify
-if ($oldNotify -contains $scriptPath) {
+if (Test-OwnNotify $oldNotify $scriptPath) {
     if (-not (Test-Path -LiteralPath $connectionFile)) { throw 'Existing notification setup is incomplete; config has not been changed.' }
     $previousNotify = @((Get-Content -LiteralPath $connectionFile -Raw | ConvertFrom-Json).previousNotify)
 }
@@ -65,24 +86,20 @@ if (Test-Path -LiteralPath $configFile) {
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'notify.cjs') -Destination $scriptPath -Force
 $settings = @{ endpoint = $Endpoint; previousNotify = @($previousNotify) }
 [IO.File]::WriteAllText($connectionFile, ($settings | ConvertTo-Json -Depth 5), [Text.UTF8Encoding]::new($false))
-$newText = Set-Notify $oldText @($node, $scriptPath)
+$newText = Set-Notify $oldText @($launcherPath, $node, $scriptPath)
 [IO.File]::WriteAllText($configFile, $newText, [Text.UTF8Encoding]::new($false))
-[IO.File]::WriteAllText((Join-Path $runtime 'retry.ps1'), @'
-param([string]$NodePath, [string]$NotifyPath)
-Start-Process -FilePath $NodePath -ArgumentList ('"' + $NotifyPath + '" --flush') -WindowStyle Hidden -Wait
-'@, [Text.UTF8Encoding]::new($false))
 
 # Flush the metadata-only outbox after transient network failures, without an open terminal.
 try {
-    $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument ('-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "' + (Join-Path $runtime 'retry.ps1') + '" -NodePath "' + $node + '" -NotifyPath "' + $scriptPath + '"')
+    $action = New-ScheduledTaskAction -Execute $launcherPath -Argument ('"' + $node + '" "' + $scriptPath + '" --flush')
     $trigger = New-ScheduledTaskTrigger -Once -At ([DateTime]::Now.AddMinutes(1)) -RepetitionInterval (New-TimeSpan -Minutes 1)
     $principal = New-ScheduledTaskPrincipal -UserId ([Security.Principal.WindowsIdentity]::GetCurrent().Name) -LogonType Interactive -RunLevel Limited
-    $taskSettings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Minutes 1) -MultipleInstances IgnoreNew
+    $taskSettings = New-ScheduledTaskSettingsSet -Hidden -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Minutes 1) -MultipleInstances IgnoreNew
     Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Principal $principal -Settings $taskSettings -Force | Out-Null
 } catch { Write-Host 'Automatic retry registration failed. Pending messages will retry at the next Codex completion.' }
 Write-Host 'Installed. Your original Codex callback is preserved. Restart Codex to activate task notifications.'
 if (-not $NoTest) {
-    & $node $scriptPath --test
+    & $launcherPath $node $scriptPath --test
     if ($LASTEXITCODE -eq 0) { Write-Host 'Pairing test sent. Check Codex Usage on your phone.' }
     else { Write-Host 'Pairing test could not be sent. Check your proxy/network; queued messages are kept for retry.' }
 }

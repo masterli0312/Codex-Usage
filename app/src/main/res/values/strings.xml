@@ -434,4 +434,6 @@
     <string name="codex_quota_is_an_independent_utility_designed_for_developers_to_">Codex Quota is an independent utility designed for developers to monitor rate limits and subscription windows. This application is NOT affiliated with, maintained, authorized, sponsored, or endorsed by OpenAI, Inc.\n\nOpenAI, ChatGPT, and Codex are trademarks of OpenAI, Inc.</string>
     <string name="zero_telemetry_no_analytics_tracking_or_remote_error_reporting_n_">• Zero Telemetry: No analytics, tracking, or remote error reporting.\n• Hardware Encryption: Credentials isolated in Android Keystore AES-256-GCM.\n• No Cloud Relay: App communicates directly with OpenAI APIs exclusively over HTTPS.</string>
     <string name="weekly_quota_exhausted">7-day quota exhausted</string>
+    <string name="quota_temporarily_unavailable">Unavailable</string>
+    <string name="five_hour_waiting_weekly">Waiting for 7-day quota to recover</string>
 </resources>

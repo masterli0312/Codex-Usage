@@ -428,4 +428,6 @@
     <string name="codex_quota_is_an_independent_utility_designed_for_developers_to_">Codex Quota 是一款供开发者查看速率限制和订阅周期的独立工具。此应用与 OpenAI, Inc. 没有关联，也未经其维护、授权、赞助或认可。\n\nOpenAI、ChatGPT 和 Codex 是 OpenAI, Inc. 的商标。</string>
     <string name="zero_telemetry_no_analytics_tracking_or_remote_error_reporting_n_">• 零遥测：无分析、追踪或远程错误报告。\n• 硬件加密：凭据通过 Android Keystore 和 AES-256-GCM 保护。\n• 无云端中转：应用仅通过 HTTPS 直接访问 OpenAI API。</string>
     <string name="weekly_quota_exhausted">7 天额度已用尽</string>
+    <string name="quota_temporarily_unavailable">暂不可用</string>
+    <string name="five_hour_waiting_weekly">等待 7 天额度恢复</string>
 </resources>
