@@ -41,7 +41,7 @@
     <string name="activate_five_hour_uncertain">The request result is uncertain. No automatic retry will be sent for this window to avoid duplicate usage.</string>
     <string name="codex_usage_title">Codex Usage</string>
     <string name="gpt_reserve">GPT Reserve</string>
-    <string name="official_credit">Official Credit</string>
+    <string name="official_credit">Credit balance</string>
     <string name="reset_opportunities">Reset opportunities</string>
     <string name="value_unavailable">—</string>
     <string name="renewal_expiry_date">Renewal expiry date</string>

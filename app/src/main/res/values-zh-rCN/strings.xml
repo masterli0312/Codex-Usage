@@ -41,7 +41,7 @@
     <string name="activate_five_hour_uncertain">请求结果暂时无法确认。为避免重复消耗，本次窗口不会自动重试。</string>
     <string name="codex_usage_title">Codex Usage</string>
     <string name="gpt_reserve">GPT Reserve</string>
-    <string name="official_credit">官方 Credit</string>
+    <string name="official_credit">Credit 额度</string>
     <string name="reset_opportunities">Reset 机会</string>
     <string name="value_unavailable">—</string>
     <string name="renewal_expiry_date">续费到期日期</string>

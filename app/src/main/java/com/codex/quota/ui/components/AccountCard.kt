@@ -23,7 +23,6 @@ import com.codex.quota.ui.util.localizedShortPlanName
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
 
 @Composable
 fun AccountCard(item: AccountWithUsage, onClick: () -> Unit, onSignInClick: () -> Unit, modifier: Modifier = Modifier) {
@@ -60,7 +59,7 @@ fun AccountCard(item: AccountWithUsage, onClick: () -> Unit, onSignInClick: () -
                 }
                 Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(12.dp)).padding(vertical = 10.dp)) {
                     Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        SummaryMetric(stringResource(R.string.official_credit), usage?.remainingCredits?.let { NumberFormat.getCurrencyInstance(Locale.US).format(it) } ?: stringResource(R.string.value_unavailable))
+                        SummaryMetric(stringResource(R.string.official_credit), usage?.remainingCredits?.let { NumberFormat.getNumberInstance(LocalConfiguration.current.locales[0]).format(it) } ?: stringResource(R.string.value_unavailable))
                     }
                     Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                         SummaryMetric(stringResource(R.string.reset_opportunities), usage?.bankedResets?.toString() ?: stringResource(R.string.value_unavailable))
