@@ -39,8 +39,13 @@ class ActivateFiveHourWindowUseCase(
         val refreshed = repository.refreshAccount(accountId)
         if (refreshed.isFailure) return FiveHourActivationOutcome.RefreshFailed
         val usageBeforeActivation = refreshed.getOrThrow()
-        if (usageBeforeActivation.status != AuthStatus.AUTHENTICATED) {
+        if (usageBeforeActivation.status == AuthStatus.AUTHENTICATION_REQUIRED) {
             return FiveHourActivationOutcome.LoginRequired
+        }
+        // The repository can return cached quota with OFFLINE/TEMPORARY_ERROR as a successful Result.
+        // No activation was sent, so this preflight remains safe to retry when the network recovers.
+        if (usageBeforeActivation.status != AuthStatus.AUTHENTICATED) {
+            return FiveHourActivationOutcome.RefreshFailed
         }
         if (usageBeforeActivation.isWeeklyQuotaExhausted) return FiveHourActivationOutcome.NotDue
         // A newer reset timestamp means this window has already rolled over and started.

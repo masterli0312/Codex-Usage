@@ -39,6 +39,44 @@ class ActivateFiveHourWindowUseCaseTest {
     fun tearDown() { unmockkObject(JwtTokenParser) }
 
     @Test
+    fun transientQuotaFailuresRemainRetryableWithoutSendingAnActivation() = runTest {
+        for (status in listOf(AuthStatus.OFFLINE, AuthStatus.TEMPORARY_ERROR)) {
+            val activator = mockk<CodexWindowActivator>()
+            val useCase = createUseCase(activator, usage.copy(status = status))
+
+            assertEquals(FiveHourActivationOutcome.RefreshFailed, useCase(accountId, resetAt))
+            coVerify(exactly = 0) { activator.activate(any(), any()) }
+        }
+    }
+
+    @Test
+    fun recoveredNetworkCanActivateTheSameWindowAfterAnOfflinePreflight() = runTest {
+        val activator = mockk<CodexWindowActivator>()
+        coEvery { activator.activate("token", "chatgpt-account") } returns Result.success(Unit)
+        val repository = mockk<CodexAccountRepository>()
+        val useCase = createUseCase(activator, repository = repository)
+        coEvery { repository.refreshAccount(accountId) } returnsMany listOf(
+            Result.success(usage.copy(status = AuthStatus.OFFLINE)),
+            Result.success(usage),
+            Result.success(usage)
+        )
+
+        assertEquals(FiveHourActivationOutcome.RefreshFailed, useCase(accountId, resetAt))
+        assertTrue(useCase(accountId, resetAt) is FiveHourActivationOutcome.Success)
+        assertEquals(FiveHourActivationOutcome.AlreadyAttempted, useCase(accountId, resetAt))
+        coVerify(exactly = 1) { activator.activate("token", "chatgpt-account") }
+    }
+
+    @Test
+    fun expiredLoginDoesNotRetryOrSendAnActivation() = runTest {
+        val activator = mockk<CodexWindowActivator>()
+        val useCase = createUseCase(activator, usage.copy(status = AuthStatus.AUTHENTICATION_REQUIRED))
+
+        assertEquals(FiveHourActivationOutcome.LoginRequired, useCase(accountId, resetAt))
+        coVerify(exactly = 0) { activator.activate(any(), any()) }
+    }
+
+    @Test
     fun exhaustedWeeklyQuotaDoesNotActivateAFullFiveHourWindow() = runTest {
         val activator = mockk<CodexWindowActivator>()
         coEvery { activator.activate("token", "chatgpt-account") } returns Result.success(Unit)
@@ -121,9 +159,9 @@ class ActivateFiveHourWindowUseCaseTest {
     private fun createUseCase(
         activator: CodexWindowActivator,
         refreshedUsage: CodexUsage = usage,
-        cachedUsage: CodexUsage = usage
+        cachedUsage: CodexUsage = usage,
+        repository: CodexAccountRepository = mockk()
     ): ActivateFiveHourWindowUseCase {
-        val repository = mockk<CodexAccountRepository>()
         coEvery { repository.getAccount(accountId) } returns AccountWithUsage(account, cachedUsage)
         coEvery { repository.refreshAccount(accountId) } returns Result.success(refreshedUsage)
         val credentialStore = mockk<CredentialStore>()

@@ -76,7 +76,8 @@ class CodexQuotaApplication : Application() {
                         WorkScheduler.scheduleFiveHourResetRefresh(
                             this@CodexQuotaApplication,
                             usage.accountId,
-                            usage
+                            usage,
+                            includeOverdue = usage.accountId in prefs.autoActivateFiveHourAccountIds
                         )
                     }
                 }

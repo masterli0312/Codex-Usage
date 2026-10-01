@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.codex.quota.CodexQuotaApplication
+import com.codex.quota.domain.model.AuthStatus
 import com.codex.quota.domain.usecase.FiveHourActivationOutcome
 import com.codex.quota.widget.WidgetUpdateHelper
 
@@ -33,8 +34,11 @@ class ResetWindowRefreshWorker(
                 }
             }
             if (outcome == FiveHourActivationOutcome.RefreshFailed) return Result.retry()
-        } else if (app.repository.refreshAccount(accountId).isFailure) {
-            return Result.retry()
+        } else {
+            val refreshed = app.repository.refreshAccount(accountId).getOrNull()
+            if (refreshed?.status !in listOf(AuthStatus.AUTHENTICATED, AuthStatus.AUTHENTICATION_REQUIRED)) {
+                return Result.retry()
+            }
         }
         WidgetUpdateHelper.updateAllWidgets(applicationContext)
         return Result.success()
