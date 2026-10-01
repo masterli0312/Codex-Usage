@@ -121,12 +121,8 @@ class MainActivity : AppCompatActivity() {
         TaskCompletionService.startIfEnabled(this)
         val app = application as CodexQuotaApplication
         lifecycleScope.launch {
-            val preferences = runCatching {
-                app.preferencesRepository.getPreferences()
-            }.getOrNull()
-            if (preferences?.refreshOnAppOpen != false) {
-                app.repository.refreshAllAccounts()
-            }
+            // Opening the app always refreshes, including when periodic background sync is off.
+            app.repository.refreshAllAccounts()
         }
     }
 

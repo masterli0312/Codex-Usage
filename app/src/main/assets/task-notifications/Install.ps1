@@ -23,14 +23,35 @@ function Set-Notify([string]$Text, [array]$Command) {
     return $line + "`r`n" + $Text
 }
 
-function Test-OwnNotify([array]$Command, [string]$NotifyScript) {
+function Get-WrappedNotify([array]$Command) {
+    if ($Command.Count -lt 4 -or [IO.Path]::GetFileName([string]$Command[0]) -ne 'codex-computer-use.exe' -or $Command[1] -ne 'turn-ended') { return ,@() }
+    $index = [Array]::IndexOf($Command, '--previous-notify')
+    if ($index -lt 0 -or $index + 1 -ge $Command.Count) { return ,@() }
+    try { return ,@($Command[$index + 1] | ConvertFrom-Json) } catch { return ,@() }
+}
+
+function Test-OwnNotify([array]$Command, [string]$NotifyScript, [int]$Depth = 0) {
     $expected = [IO.Path]::GetFullPath($NotifyScript)
     foreach ($argument in $Command) {
         try {
             if ([string]::Equals([IO.Path]::GetFullPath([string]$argument), $expected, [StringComparison]::OrdinalIgnoreCase)) { return $true }
         } catch { }
     }
+    if ($Depth -lt 4) {
+        $wrapped = Get-WrappedNotify $Command
+        if ($wrapped.Count) { return (Test-OwnNotify $wrapped $NotifyScript ($Depth + 1)) }
+    }
     return $false
+}
+
+function Get-PreservedNotify([array]$Command, [string]$NotifyScript, [array]$SavedOriginal) {
+    $wrapped = Get-WrappedNotify $Command
+    if ($wrapped.Count -and (Test-OwnNotify $wrapped $NotifyScript)) {
+        # Keep the current computer-use handler, removing only its old relay chain.
+        $index = [Array]::IndexOf($Command, '--previous-notify')
+        return ,@($Command | Select-Object -Index @(0..($Command.Count - 1) | Where-Object { $_ -ne $index -and $_ -ne ($index + 1) }))
+    }
+    return ,@($SavedOriginal)
 }
 
 $oldText = if (Test-Path -LiteralPath $configFile) { [IO.File]::ReadAllText($configFile) } else { '' }
@@ -78,13 +99,19 @@ if (-not (Test-Path -LiteralPath $launcherPath)) {
 $previousNotify = $oldNotify
 if (Test-OwnNotify $oldNotify $scriptPath) {
     if (-not (Test-Path -LiteralPath $connectionFile)) { throw 'Existing notification setup is incomplete; config has not been changed.' }
-    $previousNotify = @((Get-Content -LiteralPath $connectionFile -Raw | ConvertFrom-Json).previousNotify)
+    $savedConnection = Get-Content -LiteralPath $connectionFile -Raw | ConvertFrom-Json
+    $previousNotify = Get-PreservedNotify $oldNotify $scriptPath @($savedConnection.previousNotify)
 }
 if (Test-Path -LiteralPath $configFile) {
     Copy-Item -LiteralPath $configFile -Destination ($configFile + '.before-task-notifications-' + [DateTime]::Now.ToString('yyyyMMddHHmmssfff'))
 }
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'notify.cjs') -Destination $scriptPath -Force
-$settings = @{ endpoint = $Endpoint; previousNotify = @($previousNotify) }
+$monitorEnabledAt = [DateTime]::UtcNow.ToString('o')
+if (Test-Path -LiteralPath $connectionFile) {
+    $savedConnection = Get-Content -LiteralPath $connectionFile -Raw | ConvertFrom-Json
+    if ($savedConnection.endpoint -eq $Endpoint -and $savedConnection.monitorEnabledAt) { $monitorEnabledAt = $savedConnection.monitorEnabledAt }
+}
+$settings = @{ endpoint = $Endpoint; previousNotify = @($previousNotify); codexHome = [IO.Path]::GetFullPath($CodexDirectory); monitorEnabledAt = $monitorEnabledAt }
 [IO.File]::WriteAllText($connectionFile, ($settings | ConvertTo-Json -Depth 5), [Text.UTF8Encoding]::new($false))
 $newText = Set-Notify $oldText @($launcherPath, $node, $scriptPath)
 [IO.File]::WriteAllText($configFile, $newText, [Text.UTF8Encoding]::new($false))

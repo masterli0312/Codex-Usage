@@ -58,3 +58,96 @@ test('failed sends remain metadata-only and can be flushed after recovery', asyn
     fs.rmSync(directory, { recursive: true, force: true });
   }
 });
+
+function monitorFixture() {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'codex-usage-monitor-test-'));
+  const home = path.join(directory, 'codex');
+  const sessions = path.join(home, 'sessions', '2026', '10', '01');
+  fs.mkdirSync(sessions, { recursive: true });
+  fs.writeFileSync(path.join(directory, 'connection.json'), JSON.stringify({
+    endpoint: 'https://ntfy.sh/example', previousNotify: [], codexHome: home,
+    monitorEnabledAt: '2026-10-01T00:00:00Z',
+  }));
+  const thread = '01a00000-0000-0000-0000-000000000001';
+  const file = path.join(sessions, 'rollout-2026-10-01T00-00-00-' + thread + '.jsonl');
+  function event(type, turn, time = '2026-10-01T01:00:00Z') {
+    return JSON.stringify({ timestamp: time, type: 'event_msg', payload: { type, turn_id: turn,
+      last_agent_message: 'private reply must never leave the computer' } });
+  }
+  return { directory, home, file, thread, event, cleanup: () => {
+    assert.equal(path.dirname(directory), path.resolve(os.tmpdir()));
+    assert.equal(path.basename(directory).startsWith('codex-usage-monitor-test-'), true);
+    fs.rmSync(directory, { recursive: true, force: true });
+  } };
+}
+
+test('background scan delivers a missed completion and ignores old turns and running tasks', async () => {
+  const f = monitorFixture();
+  try {
+    fs.writeFileSync(f.file, [f.event('task_complete', 'old', '2026-09-30T01:00:00Z'),
+      f.event('task_started', 'running'), f.event('task_complete', 'finished')].join('\n') + '\n');
+    const sent = [];
+    await main(['--flush'], f.directory, async (_, message) => sent.push(message));
+    assert.equal(sent.length, 1);
+    assert.deepEqual(sent[0], completionMetadata({ type: 'agent-turn-complete', 'thread-id': f.thread, 'turn-id': 'finished' }));
+    const checkpoint = fs.readFileSync(path.join(f.directory, 'monitor-state.json'), 'utf8');
+    assert.equal(checkpoint.includes('private reply'), false);
+    await main(['--flush'], f.directory, async (_, message) => sent.push(message));
+    assert.equal(sent.length, 1);
+  } finally { f.cleanup(); }
+});
+
+test('callback and fallback share one delivery identity', async () => {
+  const f = monitorFixture();
+  try {
+    fs.writeFileSync(f.file, f.event('task_complete', 'done') + '\n');
+    let sent = 0;
+    const publisher = async () => { sent++; };
+    const raw = JSON.stringify({ type: 'agent-turn-complete', 'thread-id': f.thread, 'turn-id': 'done' });
+    await main([raw], f.directory, publisher);
+    await main(['--flush'], f.directory, publisher);
+    await main([raw], f.directory, publisher);
+    assert.equal(sent, 1);
+  } finally { f.cleanup(); }
+});
+
+test('partial lines and failures recover without losing or repeating completions', async () => {
+  const f = monitorFixture();
+  try {
+    const line = f.event('task_complete', 'done');
+    fs.writeFileSync(f.file, line.slice(0, 80));
+    let sent = 0;
+    await main(['--flush'], f.directory, async () => { sent++; });
+    assert.equal(sent, 0);
+    fs.appendFileSync(f.file, line.slice(80) + '\n');
+    await main(['--flush'], f.directory, async () => { throw new Error('offline'); });
+    assert.equal(fs.readdirSync(path.join(f.directory, 'outbox')).filter(n => n.endsWith('.json')).length, 1);
+    await main(['--flush'], f.directory, async () => { sent++; });
+    await main(['--flush'], f.directory, async () => { sent++; });
+    assert.equal(sent, 1);
+  } finally { f.cleanup(); }
+});
+
+test('all sessions are checked independently and an aborted turn is not completed', async () => {
+  const f = monitorFixture();
+  try {
+    fs.writeFileSync(f.file, f.event('turn_aborted', 'abort') + '\n' + f.event('task_complete', 'first') + '\n');
+    const second = f.file.replace(f.thread, '01a00000-0000-0000-0000-000000000002');
+    fs.writeFileSync(second, f.event('task_complete', 'second') + '\n');
+    let sent = 0;
+    await main(['--flush'], f.directory, async () => { sent++; });
+    assert.equal(sent, 2);
+  } finally { f.cleanup(); }
+});
+
+test('subagent completions do not masquerade as a user conversation ending', async () => {
+  const f = monitorFixture();
+  try {
+    fs.writeFileSync(f.file, JSON.stringify({type: 'session_meta', payload: { source: { subagent: 'thread_spawn' } }}) + '\n' + f.event('task_complete', 'child') + '\n');
+    let sent = 0;
+    await main(['--flush'], f.directory, async () => { sent++; });
+    fs.appendFileSync(f.file, f.event('task_complete', 'child-again') + '\n');
+    await main(['--flush'], f.directory, async () => { sent++; });
+    assert.equal(sent, 0);
+  } finally { f.cleanup(); }
+});
