@@ -10,11 +10,11 @@
 
 *功能展示图由 AI 生成；图中额度数值、账号及按钮状态仅作示意，实际界面与服务端数据为准。*
 
-[下载 1.0.5 APK](https://github.com/masterli0312/Codex-Usage/releases/download/apk-1.0.5-debug/Codex-Usage-v1.0.5-debug.apk) · [1.0.5 发布说明](https://github.com/masterli0312/Codex-Usage/releases/tag/apk-1.0.5-debug) · [查看全部版本](https://github.com/masterli0312/Codex-Usage/releases) · [上游项目](https://github.com/boudywho/codex-quota-android)
+[下载 1.0.6 APK](https://github.com/masterli0312/Codex-Usage/releases/download/apk-1.0.6-debug/Codex-Usage-v1.0.6-debug.apk) · [1.0.6 发布说明](https://github.com/masterli0312/Codex-Usage/releases/tag/apk-1.0.6-debug) · [查看全部版本](https://github.com/masterli0312/Codex-Usage/releases) · [上游项目](https://github.com/boudywho/codex-quota-android)
 
-> 当前 APK 是 **1.0.5 调试签名测试版**，需要 Android 8.0 或更高版本。安装前请阅读[安装与升级](#安装与升级)。已配对用户还需更新电脑组件，才能修复电脑端每分钟闪出命令窗口的问题。
+> 当前 APK 是 **1.0.6 调试签名测试版**，需要 Android 8.0 或更高版本。安装前请阅读[安装与升级](#安装与升级)。仍在使用 1.0.4 电脑通知组件的用户还需更新电脑组件，才能修复每分钟闪出命令窗口的问题。
 
-本项目基于 [boudywho/codex-quota-android](https://github.com/boudywho/codex-quota-android)，采用 MIT 许可。以下说明结合上游文档与本仓库 **1.0.5** 的实际代码和页面整理。展示图保留自 1.0.1，任务提醒页面以当前 App 为准。
+本项目基于 [boudywho/codex-quota-android](https://github.com/boudywho/codex-quota-android)，采用 MIT 许可。以下说明结合上游文档与本仓库 **1.0.6** 的实际代码和页面整理。展示图保留自 1.0.1，任务提醒页面以当前 App 为准。
 
 ## 目录
 
@@ -24,6 +24,7 @@
 - [5 小时额度激活](#5-小时额度激活)
 - [设置与提醒](#设置与提醒)
 - [Codex 任务完成提醒（首次需要电脑配对）](#codex-任务完成提醒首次需要电脑配对)
+- [1.0.6 更新内容](#106-更新内容)
 - [1.0.5 更新内容](#105-更新内容)
 - [1.0.4 更新内容](#104-更新内容)
 - [安装与升级](#安装与升级)
@@ -71,12 +72,15 @@
 
 **刷新**会重新读取服务端额度；**激活**会在旧的 5 小时窗口到期后发送一次小型 Codex 请求，以启动新窗口。激活会消耗少量额度。
 
+**自动激活在手机上执行，电脑可以关机。手机节点关闭且无法访问 OpenAI 时不能激活，恢复可访问的网络后才可继续。** 如果当前网络无法直连 OpenAI，需要保持可用的 VPN/代理节点；仅有 Wi-Fi 或移动网络连接不代表能访问 OpenAI。无需在电脑上持续运行组件，也无需打开 ChatGPT 网页。
+
 - **手动激活**：在账号详情页点击“立即激活 5 小时额度”并确认。按钮只在旧窗口到期且新窗口尚未开始时可用。新窗口即使显示 **100%**，只要服务端返回未来的重置时间，按钮也会禁用。
 - **自动激活**：在“设置 → 后台同步”开启定期同步，再逐个账号选择。默认没有账号开启自动激活。重置时间已过后重新开启某账号的自动激活，会补排一次激活检查。
+- **网络恢复**：1.0.6 会重试发生在发送请求前的离线或临时读取错误；成功刷新额度后，对已开启自动激活的逾期窗口补排检查。恢复节点后可以打开 App 刷新额度，无需反复切换自动激活开关。已启动的新窗口、周额度耗尽和登录失效仍按相应规则处理。
 - **周额度耗尽**：该账号的 5 小时区域显示“暂不可用”和“等待 7 天额度恢复”，隐藏百分比、进度条与重置倒计时，同时隐藏手动激活入口并暂停自动激活、5 小时专用刷新和提醒。保留定期额度同步与账号的自动激活选择；真实周额度恢复后正常显示并恢复调度。
 - **防重复**：请求发送前会重新读取额度；若自动激活已使新窗口开始，手动操作不会再发送请求。对同一账号、同一窗口还会在本地记录一次请求，网络结果不确定时不会自动重复消费。
 
-Android 的后台任务可能延迟，自动激活不能保证在重置瞬间执行。激活结果以服务端返回的额度和重置时间为准。
+Android 调度、省电策略和后台重试退避可能延迟执行，恢复网络不代表立即激活，也不能保证在重置瞬间执行。激活结果以服务端返回的额度和重置时间为准。已经发送但结果不确定的请求不会自动重复发送，以避免重复消耗额度。
 
 ## 设置与提醒
 
@@ -113,6 +117,15 @@ Android 的后台任务可能延迟，自动激活不能保证在重置瞬间执
 
 详细流程、隐私说明和卸载方法见 [任务提醒使用说明](docs/task-notifications.md)。
 
+## 1.0.6 更新内容
+
+- 修复离线或临时读取错误被误判为登录失效，导致自动激活任务结束且不再重试的问题。
+- 成功刷新额度后，对已选择自动激活且已过期的窗口补排检查；其他账号的窗口刷新也会重试临时读取错误。
+- 保留多账号独立设置、周额度耗尽保护及每个窗口一次请求的防重复保护。
+- 明确自动激活的网络条件：手机无法访问 OpenAI 时不能激活，恢复可访问的网络后才可继续；电脑开关机不影响手机端激活。
+- 验证：97 项 Android 单元测试通过，含离线恢复回归测试；Android lint 0 错误、187 条警告；Debug APK 构建和签名检查通过。手机已覆盖安装并核对版本和页面；新的整夜断网恢复场景仍需实际观察。
+- 版本号 1.0.6，versionCode 29。已使用 1.0.5 电脑通知组件的用户无需再次更新电脑组件。
+
 ## 1.0.5 更新内容
 
 - 修复电脑端通知重试任务每分钟闪出命令窗口：改用无控制台的 Windows 启动程序，Codex 回调和后台重试均不创建控制台。
@@ -131,11 +144,11 @@ Android 的后台任务可能延迟，自动激活不能保证在重置瞬间执
 
 ## 安装与升级
 
-1. 从 [1.0.5 发布页面](https://github.com/masterli0312/Codex-Usage/releases/tag/apk-1.0.5-debug) 下载 `Codex-Usage-v1.0.5-debug.apk`。
+1. 从 [1.0.6 发布页面](https://github.com/masterli0312/Codex-Usage/releases/tag/apk-1.0.6-debug) 下载 `Codex-Usage-v1.0.6-debug.apk`。
 2. 在 Android 8.0（API 26）或更新系统上打开 APK，按提示允许该来源安装。
 3. 首次打开后添加账号，并按需授予通知权限。
 
-当前 APK 为**调试签名测试包**，包名 `com.codex.quota.debug`，显示版本 **1.0.5**，内部版本号 **28**。它与上一版公开测试包使用相同签名，可直接覆盖安装并保留本机数据。其他签名的 APK 不能覆盖；卸载旧版会清除该应用在本机保存的账号、登录凭据和设置。请以 GitHub Release 中的 APK 作为本测试版的安装来源。
+当前 APK 为**调试签名测试包**，包名 `com.codex.quota.debug`，显示版本 **1.0.6**，内部版本号 **29**。它与上一版公开测试包使用相同签名，可直接覆盖安装并保留本机数据。其他签名的 APK 不能覆盖；卸载旧版会清除该应用在本机保存的账号、登录凭据和设置。请以 GitHub Release 中的 APK 作为本测试版的安装来源。
 
 ## 隐私与安全
 
@@ -173,7 +186,7 @@ keyPassword=your-key-password
 
 也可以使用 `ANDROID_KEYSTORE_FILE`、`ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS`、`ANDROID_KEY_PASSWORD` 环境变量。之后运行 `./gradlew assembleRelease`；缺少凭据时构建会失败。不要提交签名文件或密码。
 
-推送到 `main` 或提交 Pull Request 时，GitHub Actions 会执行单元测试、Android lint 和 Debug 构建。电脑转发测试可运行 `node --test tools/task-notifications/notify.test.cjs`；在 Windows 上加上 `tools/task-notifications/launcher.test.cjs` 可验证无控制台启动程序。仓库还保留按 `v*` 标签构建正式签名包的工作流，需要另行配置发布签名 Secrets；目前公开提供的 1.0.5 APK 是调试签名测试版。
+推送到 `main` 或提交 Pull Request 时，GitHub Actions 会执行单元测试、Android lint 和 Debug 构建。电脑转发测试可运行 `node --test tools/task-notifications/notify.test.cjs`；在 Windows 上加上 `tools/task-notifications/launcher.test.cjs` 可验证无控制台启动程序。仓库还保留按 `v*` 标签构建正式签名包的工作流，需要另行配置发布签名 Secrets；目前公开提供的 1.0.6 APK 是调试签名测试版。
 
 ## 项目结构
 
@@ -208,7 +221,7 @@ Manual activation sends a small Codex request after a 5-hour window expires. Per
 
 **Task notifications require one-time Windows computer pairing. Installing only the phone app or signing into ChatGPT is insufficient.** Enable task reminders, share the setup ZIP to your computer, extract it, run `setup.cmd`, and restart Codex. Notifications use ntfy independently of OpenAI and do not inherently require a VPN, including for users in mainland China, provided both devices can reach the notification service. Quota/authentication requests still require access to OpenAI. Node.js 18+ and Android background notification permissions are needed. The opt-in relay never sends OpenAI credentials, prompts, replies, or files. A turn-ended notification does not guarantee task success. See the [pairing and privacy guide](docs/task-notifications.md).
 
-Download the [1.0.5 debug test APK](https://github.com/masterli0312/Codex-Usage/releases/tag/apk-1.0.5-debug). It requires Android 8.0+ and uses package `com.codex.quota.debug`, versionCode 28. Version 1.0.5 fixes flashing Windows console windows during notification retries. Existing users must export and run the updated Windows setup, then restart Codex; the existing pairing is preserved. The Chinese sections above include installation, upgrade, build and signing instructions.
+Download the [1.0.6 debug test APK](https://github.com/masterli0312/Codex-Usage/releases/tag/apk-1.0.6-debug). It requires Android 8.0+ and uses package `com.codex.quota.debug`, versionCode 29. Version 1.0.6 retries offline quota checks and schedules overdue activation checks after a successful refresh. **Automatic activation runs on the phone; the computer can be switched off. If disabling the phone's VPN/proxy makes OpenAI unreachable, activation cannot run until access is restored.** Android scheduling and retry backoff may delay execution. Already-sent requests with uncertain results are not automatically repeated. Users already running the 1.0.5 Windows notification component do not need to reinstall it. The Chinese sections above include installation, upgrade, build and signing instructions.
 
 ## 许可与声明
 
