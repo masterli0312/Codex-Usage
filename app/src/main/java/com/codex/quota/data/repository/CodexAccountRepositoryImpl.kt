@@ -27,6 +27,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
@@ -40,8 +41,19 @@ class CodexAccountRepositoryImpl(
     private val realDataSource: CodexAccountDataSource = RealOpenAiDataSource(),
     private val mockDataSource: CodexAccountDataSource = MockOpenAiDataSource(),
     private val refreshScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
-    private val onUsageRefreshed: (CodexUsage) -> Unit = {}
+    private val onUsageRefreshed: (CodexUsage) -> Unit = {},
+    private val creditHistoryDao: com.codex.quota.data.local.dao.CreditHistoryDao? = null
 ) : CodexAccountRepository {
+
+    private val refreshing = kotlinx.coroutines.flow.MutableStateFlow<Set<String>>(emptySet())
+    override val refreshingAccountIds: Flow<Set<String>> = refreshing
+    private val accountRefreshLocks = java.util.concurrent.ConcurrentHashMap<String, Mutex>()
+
+    override suspend fun renameAccount(accountId: String, nickname: String): Result<Unit> {
+        return try { accountDao.rename(accountId, nickname); Result.success(Unit) }
+        catch (error: CancellationException) { throw error }
+        catch (error: Exception) { Result.failure(error) }
+    }
 
     private val refreshMutex = Mutex()
     private val tokenRefreshMutex = Mutex()
@@ -191,7 +203,17 @@ class CodexAccountRepositoryImpl(
     private suspend fun refreshAccountInternal(
         account: CodexAccount,
         apiKey: String
-    ): Result<CodexUsage> {
+    ): Result<CodexUsage> = accountRefreshLocks.getOrPut(account.id) { Mutex() }.withLock {
+        refreshing.update { it + account.id }
+        try {
+            val currentAccount = accountDao.getById(account.id)?.toDomain()
+                ?: return@withLock Result.failure(IllegalArgumentException("Missing account"))
+            fetchAndSaveUsage(currentAccount, apiKey)
+        }
+        finally { refreshing.update { it - account.id } }
+    }
+
+    private suspend fun fetchAndSaveUsage(account: CodexAccount, apiKey: String): Result<CodexUsage> {
         val dataSource = if (account.isDemoAccount) mockDataSource else realDataSource
         val currentKey = if (account.isDemoAccount) Result.success(apiKey)
             else ensureFreshAccessToken(account.id, apiKey)
@@ -209,6 +231,7 @@ class CodexAccountRepositoryImpl(
             } else usage
             usageSnapshotDao.insertOrUpdate(UsageSnapshotEntity.fromDomain(savedUsage))
             if (!account.isDemoAccount && usage.status == AuthStatus.AUTHENTICATED) {
+                usage.remainingCredits?.let { creditHistoryDao?.record(account.id, it, usage.fetchedAtEpochMs) }
                 onUsageRefreshed(usage)
             }
 

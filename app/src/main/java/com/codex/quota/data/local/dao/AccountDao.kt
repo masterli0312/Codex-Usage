@@ -49,8 +49,18 @@ interface AccountDao {
     suspend fun deleteAll()
 
     @Transaction
+    suspend fun rename(accountId: String, nickname: String) {
+        require(nickname.isNotBlank() && nickname.length <= 40)
+        val account = requireNotNull(getById(accountId))
+        update(account.copy(nickname = nickname.trim()))
+    }
+
+    @Transaction
     suspend fun updateOrderIndices(orderedIds: List<String>) {
-        orderedIds.forEachIndexed { index, id ->
+        require(orderedIds.distinct().size == orderedIds.size)
+        val current = getAll().map { it.id }
+        val merged = orderedIds.filter { it in current } + current.filter { it !in orderedIds }
+        merged.forEachIndexed { index, id ->
             updateOrderIndex(id, index)
         }
     }

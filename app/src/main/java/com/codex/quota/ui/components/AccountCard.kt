@@ -2,6 +2,8 @@ package com.codex.quota.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -24,8 +26,11 @@ import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun AccountCard(item: AccountWithUsage, onClick: () -> Unit, onSignInClick: () -> Unit, modifier: Modifier = Modifier) {
+fun AccountCard(item: AccountWithUsage, onClick: () -> Unit, onSignInClick: () -> Unit, modifier: Modifier = Modifier,
+    onLongClick: () -> Unit = {}, onCreditClick: () -> Unit = onClick,
+    refreshing: Boolean = false, refreshFeedback: Int? = null) {
     val account = item.account
     val usage = item.usage
     val context = LocalContext.current
@@ -33,7 +38,7 @@ fun AccountCard(item: AccountWithUsage, onClick: () -> Unit, onSignInClick: () -
         ?: account.customRenewalDateEpochMs?.takeIf { it > 0L }
     val now = rememberQuotaClock()
     val signedOut = (usage?.status ?: account.authStatus) == AuthStatus.AUTHENTICATION_REQUIRED
-    Card(modifier = modifier.fillMaxWidth().clickable(onClick = onClick), shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
+    Card(modifier = modifier.fillMaxWidth().combinedClickable(onClick = onClick, onLongClick = onLongClick, onLongClickLabel = stringResource(R.string.manage_accounts)), shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
@@ -41,6 +46,16 @@ fun AccountCard(item: AccountWithUsage, onClick: () -> Unit, onSignInClick: () -
                     Text(localizedShortPlanName(context, account.planType), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 StatusBadge(usage?.status ?: account.authStatus)
+            }
+            ActivationStatusText(item, now)
+            if (refreshing) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    CircularProgressIndicator(Modifier.size(12.dp), strokeWidth = 1.5.dp)
+                    Text(stringResource(R.string.account_refreshing), style = MaterialTheme.typography.labelSmall)
+                }
+            } else if (refreshFeedback != null) {
+                Text(stringResource(refreshFeedback), style = MaterialTheme.typography.labelSmall,
+                    color = if (refreshFeedback == R.string.account_refresh_failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
             }
             if (usage?.errorMessage == CF_BLOCKED_ERROR) {
                 Text(stringResource(R.string.node_blocked_message), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
@@ -58,7 +73,7 @@ fun AccountCard(item: AccountWithUsage, onClick: () -> Unit, onSignInClick: () -
                     }
                 }
                 Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(12.dp)).padding(vertical = 10.dp)) {
-                    Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    Box(Modifier.weight(1f).clickable(onClick = onCreditClick), contentAlignment = Alignment.Center) {
                         SummaryMetric(stringResource(R.string.official_credit), usage?.remainingCredits?.let { NumberFormat.getNumberInstance(LocalConfiguration.current.locales[0]).format(it) } ?: stringResource(R.string.value_unavailable))
                     }
                     Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {

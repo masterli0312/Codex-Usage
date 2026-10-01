@@ -137,6 +137,52 @@ class CodexAccountRepositoryTest {
     }
 
     @Test
+    fun rename_preservesSubscriptionAndQuotaAndCredentials() = runTest {
+        val account = repository.addAccount("old", null, "test-key", PlanType.PLUS, null, "#10B981", true).getOrThrow()
+        repository.setAccountRenewalDate(account.id, 123456L)
+        val before = repository.getAccount(account.id)!!
+        assertTrue(repository.renameAccount(account.id, "  new  ").isSuccess)
+        val after = repository.getAccount(account.id)!!
+        assertEquals("new", after.account.nickname)
+        assertEquals(before.account.copy(nickname = "new"), after.account)
+        assertEquals(before.usage, after.usage)
+        assertEquals("test-key", fakeCredentialStore.getApiKey(account.id))
+        assertTrue(repository.renameAccount(account.id, "  ").isFailure)
+    }
+
+    @Test
+    fun reorder_preservesNewAccountsAndRejectsDuplicates() = runTest {
+        val a = repository.addAccount("a", null, "key-a", PlanType.PLUS, null, "#10B981", true).getOrThrow()
+        val b = repository.addAccount("b", null, "key-b", PlanType.PLUS, null, "#10B981", true).getOrThrow()
+        val c = repository.addAccount("c", null, "key-c", PlanType.PLUS, null, "#10B981", true).getOrThrow()
+        repository.reorderAccounts(listOf(b.id, a.id))
+        assertEquals(listOf(b.id, a.id, c.id), repository.getAllAccounts().map { it.account.id })
+        val invalid = runCatching { repository.reorderAccounts(listOf(a.id, a.id)) }
+        assertTrue(invalid.isFailure || invalid.getOrThrow().isFailure)
+        assertEquals(listOf(b.id, a.id, c.id), repository.getAllAccounts().map { it.account.id })
+    }
+
+    @Test
+    fun creditHistory_usesOnlySuccessfulRealProviderBalances() = runTest {
+        var status = AuthStatus.AUTHENTICATED
+        val source = object : CodexAccountDataSource {
+            override suspend fun fetchUsage(account: CodexAccount, apiKey: String) = Result.success(
+                CodexUsage.empty(account.id, status).copy(remainingCredits = 100.0))
+        }
+        val history = io.mockk.mockk<com.codex.quota.data.local.dao.CreditHistoryDao>(relaxed = true)
+        val repo = CodexAccountRepositoryImpl(fakeAccountDao, fakeUsageDao, fakeCredentialStore,
+            realDataSource = source, mockDataSource = source, creditHistoryDao = history)
+        val real = repo.addAccount("real", null, "key", PlanType.PLUS, null, "#10B981", false).getOrThrow()
+        io.mockk.coVerify(exactly = 1) { history.record(real.id, 100.0, any()) }
+        status = AuthStatus.OFFLINE
+        repo.refreshAccount(real.id)
+        io.mockk.coVerify(exactly = 1) { history.record(any(), any(), any()) }
+        status = AuthStatus.AUTHENTICATED
+        repo.addAccount("demo", null, "key", PlanType.PLUS, null, "#10B981", true)
+        io.mockk.coVerify(exactly = 1) { history.record(any(), any(), any()) }
+    }
+
+    @Test
     fun temporaryFailure_keepsLastSuccessfulQuotaUntilNextSuccess() = runTest {
         var status = AuthStatus.AUTHENTICATED
         var percent = 70.0

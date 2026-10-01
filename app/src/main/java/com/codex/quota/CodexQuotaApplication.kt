@@ -60,6 +60,7 @@ class CodexQuotaApplication : Application() {
         repository = CodexAccountRepositoryImpl(
             accountDao = database.accountDao(),
             usageSnapshotDao = database.usageSnapshotDao(),
+            creditHistoryDao = database.creditHistoryDao(),
             credentialStore = credentialStore,
             realDataSource = RealOpenAiDataSource(),
             mockDataSource = MockOpenAiDataSource(),

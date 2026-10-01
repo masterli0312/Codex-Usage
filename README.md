@@ -10,11 +10,11 @@
 
 *功能展示图由 AI 生成；图中额度数值、账号及按钮状态仅作示意，实际界面与服务端数据为准。*
 
-[下载 1.0.6 APK](https://github.com/masterli0312/Codex-Usage/releases/download/apk-1.0.6-debug/Codex-Usage-v1.0.6-debug.apk) · [1.0.6 发布说明](https://github.com/masterli0312/Codex-Usage/releases/tag/apk-1.0.6-debug) · [查看全部版本](https://github.com/masterli0312/Codex-Usage/releases) · [上游项目](https://github.com/boudywho/codex-quota-android)
+[下载 1.0.7 APK](https://github.com/masterli0312/Codex-Usage/releases/download/apk-1.0.7-debug/Codex-Usage-v1.0.7-debug.apk) · [1.0.7 发布说明](https://github.com/masterli0312/Codex-Usage/releases/tag/apk-1.0.7-debug) · [查看全部版本](https://github.com/masterli0312/Codex-Usage/releases) · [上游项目](https://github.com/boudywho/codex-quota-android)
 
-> 当前 APK 是 **1.0.6 调试签名测试版**，需要 Android 8.0 或更高版本。安装前请阅读[安装与升级](#安装与升级)。仍在使用 1.0.4 电脑通知组件的用户还需更新电脑组件，才能修复每分钟闪出命令窗口的问题。
+> 当前 APK 是 **1.0.7 调试签名测试版**，需要 Android 8.0 或更高版本。安装前请阅读[安装与升级](#安装与升级)。仍在使用 1.0.4 电脑通知组件的用户还需更新电脑组件，才能修复每分钟闪出命令窗口的问题。
 
-本项目基于 [boudywho/codex-quota-android](https://github.com/boudywho/codex-quota-android)，采用 MIT 许可。以下说明结合上游文档与本仓库 **1.0.6** 的实际代码和页面整理。展示图保留自 1.0.1，任务提醒页面以当前 App 为准。
+本项目基于 [boudywho/codex-quota-android](https://github.com/boudywho/codex-quota-android)，采用 MIT 许可。以下说明结合上游文档与本仓库 **1.0.7** 的实际代码和页面整理。展示图保留自 1.0.1，任务提醒页面以当前 App 为准。
 
 ## 目录
 
@@ -24,6 +24,7 @@
 - [5 小时额度激活](#5-小时额度激活)
 - [设置与提醒](#设置与提醒)
 - [Codex 任务完成提醒（首次需要电脑配对）](#codex-任务完成提醒首次需要电脑配对)
+- [1.0.7 更新内容](#107-更新内容)
 - [1.0.6 更新内容](#106-更新内容)
 - [1.0.5 更新内容](#105-更新内容)
 - [1.0.4 更新内容](#104-更新内容)
@@ -35,11 +36,25 @@
 - [English](#english)
 - [许可与声明](#许可与声明)
 
+## 1.0.7 更新内容
+
+此次体验改进保留现有官方额度读取和激活逻辑：
+
+- **自动激活说明**：首页和详情显示当前账号的设置及官方窗口状态，包括关闭、等待网络、等待重试、等待 7 天额度恢复、窗口已激活及结果待确认。旧数据会提示刷新，不把请求尝试当作成功。Android 后台执行仍可能延迟。
+- **下拉刷新反馈**：首页下拉或点击刷新后，各账号分别显示正在更新、更新成功或失败，部分失败不会被总刷新结果掩盖。
+- **昵称与排序**：长按首页账号卡片修改昵称；进入“账号排序”后拖动左侧图标，或使用上下箭头。保存后生效，仅改变本地昵称和显示顺序。
+- **Credit 额度变化记录**：点击首页 Credit 数值或详情页入口查看。仅记录成功返回的官方 Credit 余额，首次观察为基线，之后仅保存变化；每个账号最多 200 条，本地存储且相互隔离，移除账号或清除全部数据时一起删除。不是美元、账单或扣费原因，不追溯安装前的变化。
+- **通知跳转**：额度及登录提醒直达对应账号，支持 App 已打开的情况；账号已删除时明确提示，不再一直加载。
+
+验证结果：**110 项单元测试通过，无失败或跳过；Android lint 0 错误、186 条警告；Debug APK 编译成功**。英文与中文 442 个资源 key 及格式占位符检查通过。已补充数据库升级、历史记录保留及删除隔离的 Android 仪器测试，并编译测试 APK；**本次手机界面操作和真实数据库升级测试尚未执行**，不宣称已经通过实机验证。
+
+此次改动不涉及 OAuth、Token 续期、网络端点、加密或 Reset/激活请求的消费逻辑。1.0.7 沿用调试签名和包名，versionCode 从 29 增至 30。
+
 ## 主要功能
 
 | 页面或功能 | 当前版本的行为 |
 | --- | --- |
-| 首页 | 以卡片列出多个账号的昵称、套餐、状态、7 天额度、5 小时额度、GPT Reserve、官方 Credit、Reset 机会、订阅日期和更新时间。 |
+| 首页 | 以卡片列出多个账号的昵称、套餐、状态、7 天额度、5 小时额度、GPT Reserve、Credit 额度、Reset 机会、订阅日期和更新时间。 |
 | 账号详情 | 查看各额度及重置倒计时、手动刷新、订阅与续费信息；在适用时手动激活 5 小时额度或使用 Reset。 |
 | 登录 | 支持 ChatGPT Device Code 授权、API Key 账号和仅供演示的模拟账号。 |
 | 设置 | 语言、外观与主题、后台同步、通知与提醒、隐私与本地存储。 |
@@ -52,7 +67,7 @@
 
 - **7 天额度 / 5 小时额度**：ChatGPT/Codex 使用额度响应中的剩余百分比。页面倒计时根据该响应的重置时间计算。重置后仍需再次获取数据，才会显示服务端的新状态。
 - **GPT Reserve**：仅从可识别的 `gpt-reserve` 附加额度周窗口读取；不把普通周额度当作 GPT Reserve。
-- **官方 Credit**：服务端返回的 Credit 余额（如有），与额度百分比、Reset 机会分别显示。它不等于估算的周额度。
+- **Credit 额度**：服务端返回的 Credit 余额（如有），与额度百分比、Reset 机会分别显示。它不等于估算的周额度。
 - **Reset 机会**：服务端提供可用次数时才显示数值。账号详情中的“使用 Reset”需要确认，提交后重新读取服务端数据；无机会时按钮禁用。
 - **订阅信息**：显示套餐、接口提供的订阅日期和自动续费状态；缺失时可使用本机保存的自定义日期或显示不可用。
 - **API Key 账号**：使用开发者 API Key 的验证与速率限制数据。订阅账号的 7 天/5 小时窗口和 Reset 信息不能从普通 API Key 推算。
@@ -186,7 +201,7 @@ keyPassword=your-key-password
 
 也可以使用 `ANDROID_KEYSTORE_FILE`、`ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS`、`ANDROID_KEY_PASSWORD` 环境变量。之后运行 `./gradlew assembleRelease`；缺少凭据时构建会失败。不要提交签名文件或密码。
 
-推送到 `main` 或提交 Pull Request 时，GitHub Actions 会执行单元测试、Android lint 和 Debug 构建。电脑转发测试可运行 `node --test tools/task-notifications/notify.test.cjs`；在 Windows 上加上 `tools/task-notifications/launcher.test.cjs` 可验证无控制台启动程序。仓库还保留按 `v*` 标签构建正式签名包的工作流，需要另行配置发布签名 Secrets；目前公开提供的 1.0.6 APK 是调试签名测试版。
+推送到 `main` 或提交 Pull Request 时，GitHub Actions 会执行单元测试、Android lint 和 Debug 构建。电脑转发测试可运行 `node --test tools/task-notifications/notify.test.cjs`；在 Windows 上加上 `tools/task-notifications/launcher.test.cjs` 可验证无控制台启动程序。仓库还保留按 `v*` 标签构建正式签名包的工作流，需要另行配置发布签名 Secrets；目前公开提供的 1.0.7 APK 是调试签名测试版。
 
 ## 项目结构
 
@@ -206,7 +221,7 @@ app/src/main/java/com/codex/quota/
 
 ## 已知限制
 
-- OpenAI 接口并非对所有账号返回 GPT Reserve、官方 Credit、Reset 机会或订阅字段；缺失时显示不可用。
+- OpenAI 接口并非对所有账号返回 GPT Reserve、Credit 额度、Reset 机会或订阅字段；缺失时显示不可用。
 - 后台同步、自动激活和提醒受 Android 调度、网络与账号状态影响，可能延迟或失败。5 小时重置前提醒仍需更多设备实测。
 - 登录失效或旧账号缺少 OAuth 续期凭据时，可能需要重新授权。
 - 当前没有 Token 用量日志、美元余额估算或服务器独立探测；请勿把额度百分比当作账单金额。
@@ -221,7 +236,7 @@ Manual activation sends a small Codex request after a 5-hour window expires. Per
 
 **Task notifications require one-time Windows computer pairing. Installing only the phone app or signing into ChatGPT is insufficient.** Enable task reminders, share the setup ZIP to your computer, extract it, run `setup.cmd`, and restart Codex. Notifications use ntfy independently of OpenAI and do not inherently require a VPN, including for users in mainland China, provided both devices can reach the notification service. Quota/authentication requests still require access to OpenAI. Node.js 18+ and Android background notification permissions are needed. The opt-in relay never sends OpenAI credentials, prompts, replies, or files. A turn-ended notification does not guarantee task success. See the [pairing and privacy guide](docs/task-notifications.md).
 
-Download the [1.0.6 debug test APK](https://github.com/masterli0312/Codex-Usage/releases/tag/apk-1.0.6-debug). It requires Android 8.0+ and uses package `com.codex.quota.debug`, versionCode 29. Version 1.0.6 retries offline quota checks and schedules overdue activation checks after a successful refresh. **Automatic activation runs on the phone; the computer can be switched off. If disabling the phone's VPN/proxy makes OpenAI unreachable, activation cannot run until access is restored.** Android scheduling and retry backoff may delay execution. Already-sent requests with uncertain results are not automatically repeated. Users already running the 1.0.5 Windows notification component do not need to reinstall it. The Chinese sections above include installation, upgrade, build and signing instructions.
+Download the [1.0.7 debug test APK](https://github.com/masterli0312/Codex-Usage/releases/tag/apk-1.0.7-debug). It requires Android 8.0+ and uses package `com.codex.quota.debug`, versionCode 30. Version 1.0.7 adds per-account activation status, refresh feedback, nickname editing and ordering, local official Credit balance observations, and account notification navigation while the app is open. Credit is displayed without a dollar sign; history is not a billing ledger or proof of spending reasons. Local verification: 110 unit tests passed, Android lint reported no errors and 186 warnings, and the Debug APK built successfully. Device UI and database migration tests have not yet been run for this release. Offline quota retry improvements from 1.0.6 are retained. **Automatic activation runs on the phone; the computer can be switched off. If disabling the phone's VPN/proxy makes OpenAI unreachable, activation cannot run until access is restored.** Android scheduling and retry backoff may delay execution. Already-sent requests with uncertain results are not automatically repeated. Users already running the 1.0.5 Windows notification component do not need to reinstall it. The Chinese sections above include installation, upgrade, build and signing instructions.
 
 ## 许可与声明
 

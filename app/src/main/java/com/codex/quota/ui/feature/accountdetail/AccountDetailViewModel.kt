@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -41,7 +42,9 @@ class AccountDetailViewModel(
     private val localizedContext = ContextCompat.getContextForLanguage(context)
     private val appContext = context.applicationContext
 
+    val accountLoaded = MutableStateFlow(false)
     val accountState: StateFlow<AccountWithUsage?> = repository.observeAccount(accountId)
+        .onEach { accountLoaded.value = true }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -111,13 +114,16 @@ class AccountDetailViewModel(
     fun clearResetOutcome() { _resetOutcome.value = null }
 
     fun refresh() {
+        if (!_isRefreshing.compareAndSet(false, true)) return
         viewModelScope.launch {
-            _isRefreshing.value = true
-            val result = refreshAccountUseCase(accountId)
-            _isRefreshing.value = false
-            if (result.isFailure) {
-                _uiMessage.value = localizedContext.getString(R.string.error_refresh_account)
-            }
+            try {
+                val result = refreshAccountUseCase(accountId)
+                if (result.isFailure || result.getOrNull()?.status != com.codex.quota.domain.model.AuthStatus.AUTHENTICATED) {
+                    _uiMessage.value = localizedContext.getString(R.string.error_refresh_account)
+                }
+            } catch (error: CancellationException) { throw error }
+            catch (_: Exception) { _uiMessage.value = localizedContext.getString(R.string.error_refresh_account) }
+            finally { _isRefreshing.value = false }
         }
     }
 

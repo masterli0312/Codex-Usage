@@ -26,6 +26,13 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 
 class DataStoreManager(private val context: Context) : ResetOperationStore, FiveHourActivationStore {
 
+    val fiveHourActivationClaims: Flow<Map<String, Long>> = context.dataStore.data.map { prefs ->
+        prefs.asMap().mapNotNull { (key, value) ->
+            if (key.name.startsWith("five_hour_activation_") && value is Long)
+                key.name.removePrefix("five_hour_activation_") to value else null
+        }.toMap()
+    }
+
     /** Claim before the billable request. An uncertain network result is never retried automatically. */
     override suspend fun claimFiveHourActivation(accountId: String, resetAtEpochMs: Long): Boolean {
         val key = longPreferencesKey("five_hour_activation_" + accountId)

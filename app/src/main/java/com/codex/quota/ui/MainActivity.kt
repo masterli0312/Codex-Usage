@@ -17,6 +17,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
@@ -34,6 +35,7 @@ import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
+    private var pendingAccountLink by androidx.compose.runtime.mutableStateOf<String?>(null)
     private var activeNavController: NavController? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -100,6 +102,15 @@ class MainActivity : AppCompatActivity() {
                         navController = navController,
                         startDestination = startDestination
                     )
+                    LaunchedEffect(pendingAccountLink) {
+                        pendingAccountLink?.let { accountId ->
+                            navController.navigate(Screen.AccountDetail.createRoute(accountId)) {
+                                popUpTo(Screen.Dashboard.route) { inclusive = false }
+                                launchSingleTop = true
+                            }
+                            pendingAccountLink = null
+                        }
+                    }
                 }
             }
         }
@@ -121,8 +132,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        setIntent(intent)
         val app = application as CodexQuotaApplication
         handleIncomingIntent(intent, app)
+        pendingAccountLink = com.codex.quota.ui.navigation.accountIdFromNotificationLink(intent.dataString)
     }
 
     private fun handleIncomingIntent(intent: Intent?, app: CodexQuotaApplication) {

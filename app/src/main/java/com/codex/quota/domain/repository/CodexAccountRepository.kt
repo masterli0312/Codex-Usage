@@ -7,6 +7,12 @@ import com.codex.quota.domain.model.PlanType
 import kotlinx.coroutines.flow.Flow
 
 interface CodexAccountRepository {
+    val refreshingAccountIds: Flow<Set<String>> get() = kotlinx.coroutines.flow.flowOf(emptySet())
+    suspend fun renameAccount(accountId: String, nickname: String): Result<Unit> {
+        val account = getAccount(accountId)?.account ?: return Result.failure(IllegalArgumentException("Missing account"))
+        return updateAccount(accountId, nickname, account.colorHex, account.customRenewalDateEpochMs)
+    }
+
     fun observeAccounts(): Flow<List<AccountWithUsage>>
     fun observeAccount(accountId: String): Flow<AccountWithUsage?>
     suspend fun getAccount(accountId: String): AccountWithUsage?

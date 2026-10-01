@@ -43,6 +43,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,10 +62,15 @@ fun DashboardScreen(
     viewModel: DashboardViewModel,
     onNavigateToAccountDetail: (String) -> Unit,
     onNavigateToAddAccount: () -> Unit,
+    onNavigateToCreditHistory: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val refreshingIds by viewModel.refreshingAccountIds.collectAsState()
+    val feedback by viewModel.refreshFeedback.collectAsState()
+    var managing by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<AccountWithUsage?>(null) }
     val accounts by viewModel.accountsState.collectAsState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
+    val anyRefreshing = isRefreshing || refreshingIds.isNotEmpty()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
@@ -74,6 +80,10 @@ fun DashboardScreen(
             snackbarHostState.showSnackbar(context.getString(it))
             viewModel.clearError()
         }
+    }
+
+    managing?.let { selected ->
+        AccountManagementSheet(selected, accounts, viewModel) { managing = null }
     }
 
     Scaffold(
@@ -94,7 +104,7 @@ fun DashboardScreen(
                     Text(text = stringResource(R.string.codex_usage_title), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
                 },
                 actions = {
-                    if (isRefreshing) {
+                    if (anyRefreshing) {
                         CircularProgressIndicator(
                             modifier = Modifier
                                 .size(24.dp)
@@ -138,8 +148,8 @@ fun DashboardScreen(
             )
         } else {
             PullToRefreshBox(
-                isRefreshing = isRefreshing,
-                onRefresh = { viewModel.refreshAll() },
+                isRefreshing = anyRefreshing,
+                onRefresh = { if (!anyRefreshing) viewModel.refreshAll() },
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
@@ -153,7 +163,11 @@ fun DashboardScreen(
                         AccountCard(
                             item = item,
                             onClick = { onNavigateToAccountDetail(item.account.id) },
-                            onSignInClick = { onNavigateToAccountDetail(item.account.id) }
+                            onSignInClick = { onNavigateToAccountDetail(item.account.id) },
+                            onLongClick = { managing = item },
+                            onCreditClick = { onNavigateToCreditHistory(item.account.id) },
+                            refreshing = item.account.id in refreshingIds,
+                            refreshFeedback = feedback[item.account.id]
                         )
                     }
 

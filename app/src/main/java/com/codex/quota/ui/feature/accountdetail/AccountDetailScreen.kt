@@ -35,7 +35,8 @@ import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () -> Unit, modifier: Modifier = Modifier) {
+fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () -> Unit, onCreditHistory: () -> Unit, modifier: Modifier = Modifier) {
+    val loaded by viewModel.accountLoaded.collectAsState()
     val data by viewModel.accountState.collectAsState()
     val refreshing by viewModel.isRefreshing.collectAsState()
     val deleted by viewModel.accountDeleted.collectAsState()
@@ -43,6 +44,9 @@ fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () ->
     val resetOutcome by viewModel.resetOutcome.collectAsState()
     val activatingFiveHour by viewModel.isActivatingFiveHour.collectAsState()
     val fiveHourActivationOutcome by viewModel.fiveHourActivationOutcome.collectAsState()
+    val message by viewModel.uiMessage.collectAsState()
+    val snackbars = remember { SnackbarHostState() }
+    LaunchedEffect(message) { message?.let { snackbars.showSnackbar(it); viewModel.clearUiMessage() } }
     var showDelete by remember { mutableStateOf(false) }
     var showReset by remember { mutableStateOf(false) }
     var showFiveHourActivation by remember { mutableStateOf(false) }
@@ -56,7 +60,7 @@ fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () ->
         canActivateFiveHourWindow(usage, now)
     val renewalDate = usage?.subscriptionRenewalEpochMs?.takeIf { it > 0L }
         ?: account?.customRenewalDateEpochMs?.takeIf { it > 0L }
-    Scaffold(modifier = modifier.fillMaxSize(), topBar = {
+    Scaffold(modifier = modifier.fillMaxSize(), snackbarHost = { SnackbarHost(snackbars) }, topBar = {
         TopAppBar(title = {
             Column {
                 Text(account?.let { localizedAccountNickname(context, it) } ?: stringResource(R.string.account_details), fontWeight = FontWeight.Bold)
@@ -66,7 +70,13 @@ fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () ->
             IconButton(onClick = viewModel::refresh, enabled = !refreshing) { Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.refresh_usage_data)) }
         })
     }) { padding ->
-        if (account == null) Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+        if (account == null) Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+            if (!loaded) CircularProgressIndicator()
+            else Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(stringResource(R.string.account_missing))
+                TextButton(onClick = onNavigateBack) { Text(stringResource(R.string.action_back)) }
+            }
+        }
         else LazyColumn(modifier = Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item {
                 Panel {
@@ -86,6 +96,7 @@ fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () ->
                         StatusBadge(usage?.status ?: account.authStatus)
                         RelativeTimeText(account.lastSuccessfulSyncEpochMs, style = MaterialTheme.typography.labelSmall, now = now)
                     }
+                    data?.let { com.codex.quota.ui.components.ActivationStatusText(it, now) }
                     if (usage?.errorMessage == CF_BLOCKED_ERROR) {
                         Text(stringResource(R.string.node_blocked_message), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                     }
@@ -97,6 +108,11 @@ fun AccountDetailScreen(viewModel: AccountDetailViewModel, onNavigateBack: () ->
                             modifier = Modifier.fillMaxWidth()
                         ) { Text(stringResource(R.string.activate_five_hour_now)) }
                     }
+                }
+            }
+            item {
+                OutlinedButton(onClick = onCreditHistory, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.credit_history_title))
                 }
             }
             item {

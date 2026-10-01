@@ -132,6 +132,7 @@ fun AppNavigation(
                 val dashboardViewModel: DashboardViewModel = scopedViewModel {
                     DashboardViewModel(
                         observeAccountsUseCase = ObserveAccountsUseCase(app.repository),
+                        repository = app.repository,
                         refreshAllAccountsUseCase = RefreshAllAccountsUseCase(app.repository)
                     )
                 }
@@ -140,6 +141,7 @@ fun AppNavigation(
                     onNavigateToAccountDetail = { accountId ->
                         navController.navigate(Screen.AccountDetail.createRoute(accountId))
                     },
+                    onNavigateToCreditHistory = { navController.navigate(Screen.CreditHistory.createRoute(it)) },
                     onNavigateToAddAccount = {
                         navController.navigate(Screen.AddAccount.route)
                     }
@@ -169,8 +171,15 @@ fun AppNavigation(
                 }
                 AccountDetailScreen(
                     viewModel = detailViewModel,
-                    onNavigateBack = { navController.popBackStack() }
+                    onNavigateBack = { if (!navController.popBackStack()) navController.navigate(Screen.Dashboard.route) },
+                    onCreditHistory = { navController.navigate(Screen.CreditHistory.createRoute(accountId)) }
                 )
+            }
+
+            composable(Screen.CreditHistory.route, arguments = listOf(navArgument("accountId") { type = NavType.StringType })) { entry ->
+                com.codex.quota.ui.feature.credithistory.CreditHistoryScreen(app, entry.arguments?.getString("accountId").orEmpty()) {
+                    if (!navController.popBackStack()) navController.navigate(Screen.Dashboard.route)
+                }
             }
 
             composable(

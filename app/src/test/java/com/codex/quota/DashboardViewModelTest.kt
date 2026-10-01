@@ -50,7 +50,9 @@ class DashboardViewModelTest {
             refreshFinished.await()
             Result.success(emptyList<CodexUsage>())
         }
-        val viewModel = DashboardViewModel(observeAccounts, refreshAccounts)
+        val repository = mockk<com.codex.quota.domain.repository.CodexAccountRepository>()
+        every { repository.refreshingAccountIds } returns flowOf(emptySet())
+        val viewModel = DashboardViewModel(observeAccounts, repository, refreshAccounts)
 
         viewModel.refreshAll()
         viewModel.refreshAll()
@@ -64,4 +66,44 @@ class DashboardViewModelTest {
 
         assertFalse(viewModel.isRefreshing.value)
     }
+    @Test
+    fun partialRefreshReportsEachAccountWithoutClaimingTotalSuccess() = runTest(dispatcher) {
+        val repo = mockk<com.codex.quota.domain.repository.CodexAccountRepository>()
+        val a = com.codex.quota.domain.model.CodexAccount("a", "a", null, com.codex.quota.domain.model.PlanType.PLUS,
+            null, "#10B981", com.codex.quota.domain.model.AuthStatus.AUTHENTICATED, false, 0, 1, 1)
+        val b = a.copy(id = "b")
+        every { repo.observeAccounts() } returns flowOf(listOf(com.codex.quota.domain.model.AccountWithUsage(a, null),
+            com.codex.quota.domain.model.AccountWithUsage(b, null)))
+        every { repo.refreshingAccountIds } returns flowOf(emptySet())
+        coEvery { repo.refreshAllAccounts() } returns Result.success(listOf(CodexUsage.empty("a", com.codex.quota.domain.model.AuthStatus.AUTHENTICATED)))
+        val vm = DashboardViewModel(ObserveAccountsUseCase(repo), repo, RefreshAllAccountsUseCase(repo))
+        runCurrent()
+        vm.refreshAll()
+        advanceUntilIdle()
+        org.junit.Assert.assertEquals(R.string.account_refresh_success, vm.refreshFeedback.value["a"])
+        org.junit.Assert.assertEquals(R.string.account_refresh_failed, vm.refreshFeedback.value["b"])
+        org.junit.Assert.assertEquals(R.string.error_refresh_quotas, vm.errorMessage.value)
+        assertFalse(vm.isRefreshing.value)
+    }
+
+    @Test
+    fun renameFailureKeepsSheetOpenAndAllowsRetry() = runTest(dispatcher) {
+        val repo = mockk<com.codex.quota.domain.repository.CodexAccountRepository>()
+        every { repo.observeAccounts() } returns flowOf(emptyList())
+        every { repo.refreshingAccountIds } returns flowOf(emptySet())
+        coEvery { repo.renameAccount("a", "new") } returns Result.failure(Exception("fixture"))
+        val vm = DashboardViewModel(ObserveAccountsUseCase(repo), repo, RefreshAllAccountsUseCase(repo))
+        var closed = false
+        vm.rename("a", "new") { closed = true }
+        advanceUntilIdle()
+        assertFalse(closed)
+        assertFalse(vm.isSaving.value)
+        org.junit.Assert.assertEquals(R.string.error_update_account, vm.saveError.value)
+        coEvery { repo.renameAccount("a", "new") } returns Result.success(Unit)
+        vm.rename("a", "new") { closed = true }
+        advanceUntilIdle()
+        assertTrue(closed)
+        org.junit.Assert.assertNull(vm.saveError.value)
+    }
+
 }
