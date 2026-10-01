@@ -10,11 +10,11 @@
 
 *功能展示图由 AI 生成；图中额度数值、账号及按钮状态仅作示意，实际界面与服务端数据为准。*
 
-[下载 1.0.7 APK](https://github.com/masterli0312/Codex-Usage/releases/download/apk-1.0.7-debug/Codex-Usage-v1.0.7-debug.apk) · [1.0.7 发布说明](https://github.com/masterli0312/Codex-Usage/releases/tag/apk-1.0.7-debug) · [查看全部版本](https://github.com/masterli0312/Codex-Usage/releases) · [上游项目](https://github.com/boudywho/codex-quota-android)
+[下载 1.0.8 APK](https://github.com/masterli0312/Codex-Usage/releases/download/apk-1.0.8-debug/Codex-Usage-v1.0.8-debug.apk) · [1.0.8 发布说明](https://github.com/masterli0312/Codex-Usage/releases/tag/apk-1.0.8-debug) · [查看全部版本](https://github.com/masterli0312/Codex-Usage/releases) · [上游项目](https://github.com/boudywho/codex-quota-android)
 
-> 当前 APK 是 **1.0.7 调试签名测试版**，需要 Android 8.0 或更高版本。安装前请阅读[安装与升级](#安装与升级)。仍在使用 1.0.4 电脑通知组件的用户还需更新电脑组件，才能修复每分钟闪出命令窗口的问题。
+> 当前 APK 是 **1.0.8 调试签名测试版**，需要 Android 8.0 或更高版本。安装前请阅读[安装与升级](#安装与升级)。使用任务提醒的用户需重新分享电脑安装包并运行 `setup.cmd`，才能启用遗漏事件补查；仅升级 APK 不会更新电脑组件。
 
-本项目基于 [boudywho/codex-quota-android](https://github.com/boudywho/codex-quota-android)，采用 MIT 许可。以下说明结合上游文档与本仓库 **1.0.7** 的实际代码和页面整理。展示图保留自 1.0.1，任务提醒页面以当前 App 为准。
+本项目基于 [boudywho/codex-quota-android](https://github.com/boudywho/codex-quota-android)，采用 MIT 许可。以下说明结合上游文档与本仓库 **1.0.8** 的实际代码和页面整理。展示图保留自 1.0.1，任务提醒页面以当前 App 为准。
 
 ## 目录
 
@@ -24,6 +24,7 @@
 - [5 小时额度激活](#5-小时额度激活)
 - [设置与提醒](#设置与提醒)
 - [Codex 任务完成提醒（首次需要电脑配对）](#codex-任务完成提醒首次需要电脑配对)
+- [1.0.8 更新内容](#108-更新内容)
 - [1.0.7 更新内容](#107-更新内容)
 - [1.0.6 更新内容](#106-更新内容)
 - [1.0.5 更新内容](#105-更新内容)
@@ -36,7 +37,7 @@
 - [English](#english)
 - [许可与声明](#许可与声明)
 
-## 1.0.8 本地测试版（尚未发布）
+## 1.0.8 更新内容
 
 冷启动或从后台返回 App 时自动刷新所有账号，不增加设置按钮。关闭“定期后台同步”或旧版本曾关闭打开时刷新，都不会阻止本次打开自动刷新。继续复用现有额度读取及并发刷新逻辑，不改变自动激活、Reset 或登录方式。手机仍需要能够访问 OpenAI。
 
@@ -44,7 +45,7 @@
 
 **升级任务提醒需要更新电脑组件**：更新手机 APK 后重新分享电脑安装包并运行 `setup.cmd`。仅升级 APK 不会更新已安装的电脑脚本。安装器能识别被电脑操作组件包裹的旧回调，避免重复串接和递归调用。
 
-本地版本号为 1.0.8，versionCode 31；公开下载链接仍对应已发布的 1.0.7。
+版本号为 1.0.8，versionCode 31，可覆盖安装上一版公开测试包。Android 单元测试 110 项、Windows 通知与启动程序测试 14 项通过；lint 0 错误、186 个警告；Debug APK 构建成功。实机已验证打开自动刷新、两个真实对话的锁屏通知、重复去重，以及接收中断后的缓存补收。仪器测试包安装未成功，未执行仪器测试；这些结果不代表所有客户端版本与网络环境都能即时送达。
 
 ## 1.0.7 更新内容
 
@@ -134,9 +135,9 @@ Android 调度、省电策略和后台重试退避可能延迟执行，恢复网
 
 **任务提醒本身不要求 VPN，也不依赖 Google Play Services。** 默认通知服务为 `ntfy.sh`，电脑和手机都需要能访问它。服务或网络不可用时会重试，手机重连会补取仍在服务端缓存中的消息。Android 省电策略、强行停止 App、网络故障或缓存过期仍可能导致延迟或漏收，不能保证所有网络环境下始终实时送达。
 
-电脑端需要 **Node.js 18+**；安装程序优先寻找现有 Node.js 或 Codex 自带运行时，找不到时会提示安装。1.0.5 使用 Windows 自带的 .NET Framework 编译器生成无控制台启动程序，不需另行下载编译工具；编译器不可用时会退出并保留原 Codex 配置。安装程序保留现有 `notify` 回调。已验证 Codex 0.159.0 CLI 的真实任务通知；桌面端是否产生回调取决于版本和配置，需在重启后完成一次任务验证。
+电脑端需要 **Node.js 18+**；安装程序优先寻找现有 Node.js 或 Codex 自带运行时，找不到时会提示安装。1.0.5 使用 Windows 自带的 .NET Framework 编译器生成无控制台启动程序，不需另行下载编译工具；编译器不可用时会退出并保留原 Codex 配置。安装程序保留现有 `notify` 回调。1.0.8 同时按分钟补查本地会话日志中的明确完成事件，实机验证了两个不同对话的通知；没有回调且不生成本地日志的客户端仍无法由此组件获知。
 
-**从 1.0.4 升级：** 安装手机新版后，重新分享电脑安装包，解压并运行新的 `setup.cmd`，然后重启 Codex。原配对地址不变时无需重新配对；只升级 APK 不会自动更新电脑上的重试任务。
+**升级至 1.0.8：** 安装手机新版后，重新分享电脑安装包，解压并运行新的 `setup.cmd`，然后重启 Codex。原配对地址不变时无需重新配对；只升级 APK 不会自动更新电脑上的重试任务和补查功能。
 
 通知仅表示 **本轮任务已结束**，不保证所有要求都已成功完成。不会上传提示词、助手正文、文件内容、邮箱或 OpenAI Token。配对地址和带 `pairing.json` 的 ZIP 属于私人配置，**不能公开分享或上传 GitHub**；App 重装或更换配对地址后需要重新配对。
 
@@ -169,11 +170,11 @@ Android 调度、省电策略和后台重试退避可能延迟执行，恢复网
 
 ## 安装与升级
 
-1. 从 [1.0.6 发布页面](https://github.com/masterli0312/Codex-Usage/releases/tag/apk-1.0.6-debug) 下载 `Codex-Usage-v1.0.6-debug.apk`。
+1. 从 [1.0.8 发布页面](https://github.com/masterli0312/Codex-Usage/releases/tag/apk-1.0.8-debug) 下载 `Codex-Usage-v1.0.8-debug.apk`。
 2. 在 Android 8.0（API 26）或更新系统上打开 APK，按提示允许该来源安装。
 3. 首次打开后添加账号，并按需授予通知权限。
 
-当前 APK 为**调试签名测试包**，包名 `com.codex.quota.debug`，显示版本 **1.0.6**，内部版本号 **29**。它与上一版公开测试包使用相同签名，可直接覆盖安装并保留本机数据。其他签名的 APK 不能覆盖；卸载旧版会清除该应用在本机保存的账号、登录凭据和设置。请以 GitHub Release 中的 APK 作为本测试版的安装来源。
+当前 APK 为**调试签名测试包**，包名 `com.codex.quota.debug`，显示版本 **1.0.8**，内部版本号 **31**。它与上一版公开测试包使用相同签名，可直接覆盖安装并保留本机数据。其他签名的 APK 不能覆盖；卸载旧版会清除该应用在本机保存的账号、登录凭据和设置。请以 GitHub Release 中的 APK 作为本测试版的安装来源。
 
 ## 隐私与安全
 
@@ -211,7 +212,7 @@ keyPassword=your-key-password
 
 也可以使用 `ANDROID_KEYSTORE_FILE`、`ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS`、`ANDROID_KEY_PASSWORD` 环境变量。之后运行 `./gradlew assembleRelease`；缺少凭据时构建会失败。不要提交签名文件或密码。
 
-推送到 `main` 或提交 Pull Request 时，GitHub Actions 会执行单元测试、Android lint 和 Debug 构建。电脑转发测试可运行 `node --test tools/task-notifications/notify.test.cjs`；在 Windows 上加上 `tools/task-notifications/launcher.test.cjs` 可验证无控制台启动程序。仓库还保留按 `v*` 标签构建正式签名包的工作流，需要另行配置发布签名 Secrets；目前公开提供的 1.0.7 APK 是调试签名测试版。
+推送到 `main` 或提交 Pull Request 时，GitHub Actions 会执行单元测试、Android lint 和 Debug 构建。电脑转发测试可运行 `node --test tools/task-notifications/notify.test.cjs`；在 Windows 上加上 `tools/task-notifications/launcher.test.cjs` 可验证无控制台启动程序。仓库还保留按 `v*` 标签构建正式签名包的工作流，需要另行配置发布签名 Secrets；目前公开提供的 1.0.8 APK 是调试签名测试版。
 
 ## 项目结构
 
@@ -236,7 +237,7 @@ app/src/main/java/com/codex/quota/
 - 登录失效或旧账号缺少 OAuth 续期凭据时，可能需要重新授权。
 - 当前没有 Token 用量日志、美元余额估算或服务器独立探测；请勿把额度百分比当作账单金额。
 - 目前公开 APK 是调试签名测试版，尚未提供正式签名包。
-- 任务提醒需要首次电脑配对，并依赖 Codex 的完成回调及 ntfy 连通性；手机登录账号不会自动取得电脑事件。默认只提供 Windows 安装组件。
+- 任务提醒需要首次电脑配对，并依赖 Codex 的完成回调或本地明确完成事件及 ntfy 连通性；手机登录账号不会自动取得电脑事件。默认只提供 Windows 安装组件。
 
 ## English
 
@@ -246,7 +247,7 @@ Manual activation sends a small Codex request after a 5-hour window expires. Per
 
 **Task notifications require one-time Windows computer pairing. Installing only the phone app or signing into ChatGPT is insufficient.** Enable task reminders, share the setup ZIP to your computer, extract it, run `setup.cmd`, and restart Codex. Notifications use ntfy independently of OpenAI and do not inherently require a VPN, including for users in mainland China, provided both devices can reach the notification service. Quota/authentication requests still require access to OpenAI. Node.js 18+ and Android background notification permissions are needed. The opt-in relay never sends OpenAI credentials, prompts, replies, or files. A turn-ended notification does not guarantee task success. See the [pairing and privacy guide](docs/task-notifications.md).
 
-Download the [1.0.7 debug test APK](https://github.com/masterli0312/Codex-Usage/releases/tag/apk-1.0.7-debug). It requires Android 8.0+ and uses package `com.codex.quota.debug`, versionCode 30. Version 1.0.7 adds per-account activation status, refresh feedback, nickname editing and ordering, local official Credit balance observations, and account notification navigation while the app is open. Credit is displayed without a dollar sign; history is not a billing ledger or proof of spending reasons. Local verification: 110 unit tests passed, Android lint reported no errors and 186 warnings, and the Debug APK built successfully. Device UI and database migration tests have not yet been run for this release. Offline quota retry improvements from 1.0.6 are retained. **Automatic activation runs on the phone; the computer can be switched off. If disabling the phone's VPN/proxy makes OpenAI unreachable, activation cannot run until access is restored.** Android scheduling and retry backoff may delay execution. Already-sent requests with uncertain results are not automatically repeated. Users already running the 1.0.5 Windows notification component do not need to reinstall it. The Chinese sections above include installation, upgrade, build and signing instructions.
+Download the [1.0.8 debug test APK](https://github.com/masterli0312/Codex-Usage/releases/tag/apk-1.0.8-debug). It requires Android 8.0+ and uses package `com.codex.quota.debug`, versionCode 31. Opening or returning to the app automatically refreshes all accounts without a new switch. The Windows relay retains the official callback and checks explicit local completion events every minute to recover missed callbacks; retries share a deduplication identity and never transmit conversation text. **Upgrade the Windows component by sharing a fresh setup ZIP from the updated app and running `setup.cmd`; updating only the APK is insufficient.** Local verification: 110 Android unit tests and 14 Windows tests passed, lint reported 0 errors and 186 warnings, and the Debug APK built successfully. Device checks covered automatic refresh, real completion notifications from two conversations while locked, deduplication and cached delivery after reopening. Instrumentation tests could not be installed and were not run. Network and Android power management can still delay delivery. **Automatic activation runs on the phone; the computer can be switched off. If disabling the phone's VPN/proxy makes OpenAI unreachable, activation cannot run until access is restored.** Credit remains a provider-reported value, not a dollar balance or billing ledger. The Chinese sections above include installation, upgrade, build and signing instructions.
 
 ## 许可与声明
 
